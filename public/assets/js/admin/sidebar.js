@@ -28,11 +28,13 @@ export function Sidebar({ groups = [] } = {}) {
   return `
   <aside id="sidebar" class="sidebar">
     <div class="sidebar-head">
-      <div class="sidebar-logo"><i data-lucide="paw-print"></i></div>
-      <div>
-        <div class="sidebar-brand">FurEscue</div>
-        <div class="sidebar-tag">Admin Console</div>
-      </div>
+      <a href="/admin/" class="sidebar-brand-link">
+        <div class="sidebar-logo"><i data-lucide="paw-print"></i></div>
+        <div>
+          <div class="sidebar-brand">FurEscue</div>
+          <div class="sidebar-tag">Admin Console</div>
+        </div>
+      </a>
     </div>
     <nav class="sidebar-nav">
       ${out}

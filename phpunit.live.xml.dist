@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+         cacheResultFile=".phpunit.live.result.cache">
+    <testsuites>
+        <testsuite name="FURescue live HTTP">
+            <directory>tests/Http</directory>
+        </testsuite>
+    </testsuites>
+    <groups>
+        <include>
+            <group>live</group>
+        </include>
+    </groups>
+    <source>
+        <include>
+            <directory>src</directory>
+        </include>
+    </source>
+    <php>
+        <env name="APP_TESTING" value="1" force="true"/>
+    </php>
+</phpunit>

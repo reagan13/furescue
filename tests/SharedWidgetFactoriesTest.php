@@ -36,6 +36,8 @@ class SharedWidgetFactoriesTest extends TestCase
         $card = \kpi_card_html(['label' => 'Open', 'value' => '3', 'tone' => 'coral', 'icon' => 'folder-open']);
         $this->assertStringContainsString('class="kpi-card"', $card);
         $this->assertStringContainsString('kpi-card__icon--coral', $card);
+        $compact = \kpi_card_html(['label' => 'Open', 'value' => '3', 'compact' => true]);
+        $this->assertStringContainsString('kpi-card--compact', $compact);
         $this->assertStringContainsString('aria-label="Open: 3"', $card);
 
         $grid = \kpi_grid_html([

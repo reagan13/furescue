@@ -35,6 +35,7 @@ $pageModules = ['/listings/js/listings.js'];
 $pageTitle = 'FurEscue — Community Listings';
 $pageDescription = 'Post and manage community adoption listings.';
 $pageCss = [];
+$activeNav = 'my listings';
 $residentShellTitle = 'Community Listings';
 
 require views_path('layouts/resident.php');

@@ -67,10 +67,15 @@ async function handleSubmit(e) {
   let valid = true;
 
   clearError("animal_description");
+  clearError("photos");
   clearError("location");
 
   if (!description) {
     showError("animal_description");
+    valid = false;
+  }
+  if (getSelectedFiles().length === 0) {
+    showError("photos");
     valid = false;
   }
   if (!pin) {
@@ -151,7 +156,11 @@ async function boot() {
   createIcons({ icons });
   el("report-form")?.addEventListener("submit", handleSubmit);
   initDescCounter();
-  initPhotoInput();
+  initPhotoInput({
+    onChange: () => {
+      if (getSelectedFiles().length > 0) clearError("photos");
+    },
+  });
   initAddressTouched();
   try {
     const mapApi = await initMap(bounds, {

@@ -63,6 +63,11 @@ class Database
         return self::$pdo;
     }
 
+    public static function reset(): void
+    {
+        self::$pdo = null;
+    }
+
     public static function uuidV4(): string
     {
         $bytes = random_bytes(16);

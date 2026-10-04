@@ -174,6 +174,21 @@ class CasesApiTest extends ApiTestCase
         );
     }
 
+    public function testResidentResolveHidesPermissionSlug(): void
+    {
+        $resident = $this->seedResident();
+        $case = $this->seedCase(['status' => 'in_progress']);
+        $response = $this->post(
+            '/api/v1/cases/' . $case['id'] . '/resolve',
+            [],
+            $this->actingAs($resident)
+        );
+        $this->assertError($response, 'FORBIDDEN', 403);
+        $message = (string) ($response['body']['error']['message'] ?? '');
+        $this->assertSame('You do not have permission to do that.', $message);
+        $this->assertStringNotContainsString('cases.status_change', $message);
+    }
+
     public function testAdminCannotResolveAlreadyResolvedCase(): void
     {
         $admin = $this->seedAdmin();
@@ -199,12 +214,63 @@ class CasesApiTest extends ApiTestCase
     public function testAdminCanResolveWhenProofIsOnFile(): void
     {
         $admin = $this->seedAdmin();
+        $report = $this->seedReport([
+            'photo_urls' => ['/uploads/report.jpg'],
+        ]);
         $case = $this->seedCase([
+            'report_id' => $report['id'],
             'status' => 'in_progress',
             'resolution_photos' => json_encode(['/uploads/proof.jpg']),
         ]);
         $data = $this->assertOk($this->post('/api/v1/cases/' . $case['id'] . '/resolve', [], $this->actingAs($admin)));
         $this->assertSame('resolved', $data['case']['status']);
+    }
+
+    public function testResolveWithoutAttachmentsIsRejected(): void
+    {
+        $admin = $this->seedAdmin();
+        $case = $this->seedCase([
+            'status' => 'in_progress',
+            'resolution_photos' => json_encode(['/uploads/proof.jpg']),
+        ]);
+        $this->assertError(
+            $this->post('/api/v1/cases/' . $case['id'] . '/resolve', [], $this->actingAs($admin)),
+            'ATTACHMENTS_REQUIRED',
+            422
+        );
+    }
+
+    public function testAdminCanUploadProofOnInProgressCase(): void
+    {
+        $root = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'furescue-case-proof-' . bin2hex(random_bytes(4));
+        mkdir($root, 0755, true);
+        $_ENV['UPLOAD_PUBLIC_ROOT'] = $root;
+        $tmp = $root . DIRECTORY_SEPARATOR . 'proof.png';
+        file_put_contents($tmp, (string) base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', true));
+        $_FILES = [
+            'files' => [
+                'name' => 'proof.png',
+                'type' => 'image/png',
+                'tmp_name' => $tmp,
+                'error' => UPLOAD_ERR_OK,
+                'size' => filesize($tmp),
+            ],
+        ];
+        try {
+            $admin = $this->seedAdmin();
+            $case = $this->seedCase(['status' => 'in_progress']);
+            $data = $this->assertOk($this->post(
+                '/api/v1/cases/' . $case['id'] . '/proof',
+                [],
+                $this->actingAs($admin)
+            ));
+            $this->assertNotEmpty($data['proof']);
+            $this->assertStringStartsWith('/uploads/cases/', $data['proof'][0]);
+        } finally {
+            $_FILES = [];
+            unset($_ENV['UPLOAD_PUBLIC_ROOT']);
+            $this->removeDir($root);
+        }
     }
 
     public function testAdminCannotPatchStatusDirectly(): void
@@ -272,5 +338,20 @@ class CasesApiTest extends ApiTestCase
             ['url' => 'https://example.com/photo.jpg'],
             $this->actingAs($rescuer)
         ), 'VALIDATION_ERROR', 400);
+    }
+
+    private function removeDir(string $dir): void
+    {
+        if (!is_dir($dir)) {
+            return;
+        }
+        $it = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($dir, \FilesystemIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::CHILD_FIRST
+        );
+        foreach ($it as $file) {
+            $file->isDir() ? @rmdir($file->getPathname()) : @unlink($file->getPathname());
+        }
+        @rmdir($dir);
     }
 }

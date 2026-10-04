@@ -4,7 +4,7 @@ import { bootstrapPageAuth } from "/assets/js/lib/page-auth.js";
 import { esc } from "/assets/js/lib/format.js";
 import { initResidentShell } from "/assets/js/components/resident-shell.js";
 import { toast } from "/shared/components/toast/toast.js";
-import { confirmDialog } from "/shared/components/dialog/dialog.js";
+import { readingPercent, renderQuiz, saveReadPct, showBadge } from "./lesson.js";
 
 const CATEGORY_META = {
   dog_behavior: { label: "Dog Behavior", icon: "dog" },
@@ -17,8 +17,10 @@ const state = {
   modules: [],
   progress: new Map(),
   currentId: null,
+  currentModule: null,
   busy: false,
   loadError: "",
+  lastSavedPct: 0,
 };
 
 function categoryMeta(category) {
@@ -32,7 +34,9 @@ function statusFor(moduleId) {
 function statusChip(moduleId) {
   const row = statusFor(moduleId);
   if (!row) return "";
-  if (row.status === "completed") return '<span class="rchip rchip--success">Completed</span>';
+  if (row.status === "completed" || Number(row.badge_earned) === 1) {
+    return '<span class="rchip rchip--success"><i data-lucide="award" class="h-3.5 w-3.5"></i> Badge</span>';
+  }
   if (row.status === "in_progress") return '<span class="rchip rchip--sky">In progress</span>';
   return "";
 }
@@ -82,7 +86,7 @@ function renderGrid() {
         <span class="learn-card-title">${esc(m.title)}</span>
         <p class="learn-card-desc">${esc(excerpt || "Read this short module to learn the basics.")}</p>
         <div class="learn-card-foot">
-          <span class="learn-card-cta"><i data-lucide="${done ? "rotate-ccw" : "play"}"></i>${done ? "Read again" : "Start"}</span>
+          <span class="learn-card-cta"><i data-lucide="${done ? "award" : "play"}"></i>${done ? "Read again" : "Start"}</span>
         </div>
       </button>`;
     })
@@ -96,26 +100,65 @@ function renderProgress() {
   const bar = document.getElementById("learn-progress-bar");
   const note = document.getElementById("learn-progress-note");
   const total = state.modules.length;
-  const completed = state.modules.filter((m) => statusFor(m.id)?.status === "completed").length;
-  const pct = total ? Math.round((completed / total) * 100) : 0;
+  const badges = state.modules.filter((m) => {
+    const row = statusFor(m.id);
+    return row && (row.status === "completed" || Number(row.badge_earned) === 1);
+  }).length;
+  const reading = state.modules.reduce((sum, m) => {
+    const row = statusFor(m.id);
+    if (!row) return sum;
+    if (row.status === "completed") return sum + 100;
+    return sum + Math.max(0, Math.min(100, Number(row.read_pct) || 0));
+  }, 0);
+  const pct = total ? Math.round(reading / total) : 0;
 
-  if (chip) chip.textContent = `${completed} of ${total} completed`;
+  if (chip) chip.textContent = `${badges} of ${total} badges`;
   if (fill) fill.style.width = `${pct}%`;
   if (bar) bar.setAttribute("aria-valuenow", String(pct));
   if (note) {
     note.textContent = !total
       ? "No published modules yet."
-      : completed === total
-        ? "Great job — you have completed every available module!"
-        : `Keep going! ${total - completed} module${total - completed === 1 ? "" : "s"} left to complete.`;
+      : badges === total
+        ? "Every published lesson has a badge — nice work!"
+        : "The bar fills as you read. A badge is awarded after the end-of-lesson quiz.";
   }
+}
+
+function setLessonReadBar(pct) {
+  const fill = document.querySelector("#learn-lesson-progress .learn-progress-fill");
+  const bar = document.getElementById("learn-lesson-progress");
+  if (fill) fill.style.width = `${pct}%`;
+  if (bar) bar.setAttribute("aria-valuenow", String(pct));
 }
 
 function showList() {
   state.currentId = null;
+  state.currentModule = null;
   if (window.location.hash) history.replaceState(null, "", window.location.pathname);
   document.getElementById("learn-lesson-section")?.classList.add("is-hidden");
   document.getElementById("learn-list-section")?.classList.remove("is-hidden");
+}
+
+function applyLessonChrome(mod, done) {
+  const meta = categoryMeta(mod.category);
+  const titleEl = document.getElementById("learn-lesson-title");
+  const catEl = document.getElementById("learn-lesson-category");
+  const bodyEl = document.getElementById("learn-lesson-content");
+  const statusEl = document.getElementById("learn-lesson-status");
+  const hint = document.getElementById("learn-lesson-hint");
+  if (titleEl) titleEl.textContent = mod.title;
+  if (catEl) catEl.textContent = meta.label;
+  if (bodyEl) bodyEl.innerHTML = String(mod.content_body || "");
+  if (statusEl) {
+    statusEl.textContent = done ? "Badge earned" : "In progress";
+    statusEl.className = `rchip ${done ? "rchip--success" : "rchip--sky"}`;
+    statusEl.hidden = false;
+  }
+  if (hint) {
+    hint.textContent = done
+      ? "You already earned this badge. You can still reread the lesson."
+      : "Read to the end. The quiz unlocks the badge — no extra button to tap.";
+  }
 }
 
 async function openLesson(moduleId) {
@@ -130,38 +173,33 @@ async function openLesson(moduleId) {
     if (!mod) throw new Error("Module not found");
 
     state.currentId = mod.id;
-    if (statusFor(mod.id) == null) {
-      state.progress.set(mod.id, { module_id: mod.id, status: "in_progress", completed_at: null });
+    state.currentModule = mod;
+    const existing = statusFor(mod.id);
+    if (existing == null) {
+      state.progress.set(mod.id, { module_id: mod.id, status: "in_progress", read_pct: 0, completed_at: null });
       void apiFetch("/elearning/progress", {
         method: "POST",
-        body: { module_id: mod.id, status: "in_progress" },
+        body: { module_id: mod.id, status: "in_progress", read_pct: 0 },
       }).catch(() => {});
     }
 
-    const meta = categoryMeta(mod.category);
     const done = statusFor(mod.id)?.status === "completed";
-    const titleEl = document.getElementById("learn-lesson-title");
-    const catEl = document.getElementById("learn-lesson-category");
-    const bodyEl = document.getElementById("learn-lesson-content");
-    const statusEl = document.getElementById("learn-lesson-status");
-    if (titleEl) titleEl.textContent = mod.title;
-    if (catEl) catEl.textContent = meta.label;
-    if (bodyEl) bodyEl.innerHTML = String(mod.content_body || "");
-    if (statusEl) {
-      statusEl.textContent = done ? "Completed" : "In progress";
-      statusEl.className = `rchip ${done ? "rchip--success" : "rchip--sky"}`;
-      statusEl.hidden = false;
-    }
+    applyLessonChrome(mod, done);
     list.classList.add("is-hidden");
     section.classList.remove("is-hidden");
 
-    const btn = document.getElementById("learn-complete");
-    if (btn) {
-      btn.disabled = done;
-      const label = btn.querySelector("span");
-      if (label) label.textContent = done ? "Completed" : "Mark Complete";
-    }
+    const quiz = Array.isArray(mod.quiz) ? mod.quiz : [];
+    renderQuiz(document.getElementById("learn-quiz"), quiz, {
+      disabled: done,
+      busy: state.busy,
+      onSubmit: submitQuiz,
+    });
+    showBadge(document.getElementById("learn-badge"), mod.title);
+    document.getElementById("learn-badge").hidden = !done;
 
+    const startPct = done ? 100 : Math.max(0, Number(statusFor(mod.id)?.read_pct) || 0);
+    state.lastSavedPct = startPct;
+    setLessonReadBar(startPct);
     createIcons({ icons });
     renderProgress();
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -170,44 +208,53 @@ async function openLesson(moduleId) {
   }
 }
 
-async function markComplete() {
+async function submitQuiz(answers) {
   if (!state.currentId || state.busy) return;
-  const title = document.getElementById("learn-lesson-title")?.textContent || "this module";
-  const ok = await confirmDialog({
-    title: "Mark this module complete?",
-    message: `This will mark "${title}" as completed.`,
-    confirmText: "Mark complete",
-  });
-  if (!ok) return;
-  bootstrapPageAuth();
-  const btn = document.getElementById("learn-complete");
+  if (answers.some((n) => n < 0)) {
+    toast("Answer every question first.", { type: "error" });
+    return;
+  }
   state.busy = true;
-  if (btn) btn.disabled = true;
   try {
-    await apiFetch("/elearning/progress", {
+    const data = await apiFetch("/elearning/quiz", {
       method: "POST",
-      body: { module_id: state.currentId, status: "completed" },
+      body: { module_id: state.currentId, answers },
     });
-    state.progress.set(state.currentId, {
-      module_id: state.currentId,
-      status: "completed",
-      completed_at: new Date().toISOString().slice(0, 19).replace("T", " "),
-    });
-    const statusEl = document.getElementById("learn-lesson-status");
-    if (statusEl) {
-      statusEl.textContent = "Completed";
-      statusEl.className = "rchip rchip--success";
+    const result = data && data.result;
+    const progress = data && data.progress;
+    if (progress) state.progress.set(state.currentId, progress);
+    if (result && result.passed) {
+      applyLessonChrome(state.currentModule, true);
+      showBadge(document.getElementById("learn-badge"), state.currentModule.title);
+      renderQuiz(document.getElementById("learn-quiz"), state.currentModule.quiz || [], { disabled: true });
+      setLessonReadBar(100);
+      toast("Quiz passed — badge earned.", { type: "success" });
+    } else {
+      const score = result ? `${result.score}/${result.total}` : "";
+      toast(`Not quite. You scored ${score}. Read again and retry.`, { type: "error" });
     }
-    const label = btn && btn.querySelector("span");
-    if (label) label.textContent = "Completed";
-    toast("Module completed. Nice work!", { type: "success" });
   } catch (err) {
-    toast(err.message || "Could not save your progress.", { type: "error" });
-    if (btn) btn.disabled = false;
+    toast(err.message || "Could not submit the quiz.", { type: "error" });
   } finally {
     state.busy = false;
     renderProgress();
     renderGrid();
+  }
+}
+
+function onScroll() {
+  if (!state.currentId || !state.currentModule) return;
+  if (statusFor(state.currentId)?.status === "completed") return;
+  const article = document.getElementById("learn-lesson-content");
+  const pct = readingPercent(null, article);
+  setLessonReadBar(pct);
+  const row = statusFor(state.currentId) || { module_id: state.currentId, status: "in_progress" };
+  row.read_pct = pct;
+  state.progress.set(state.currentId, row);
+  renderProgress();
+  if (pct >= state.lastSavedPct + 10 || pct === 100) {
+    state.lastSavedPct = pct;
+    void saveReadPct(state.currentId, pct);
   }
 }
 
@@ -226,8 +273,7 @@ function bindEvents() {
     showList();
   });
 
-  document.getElementById("learn-complete")?.addEventListener("click", markComplete);
-
+  window.addEventListener("scroll", onScroll, { passive: true });
   window.addEventListener("hashchange", () => {
     const id = decodeURIComponent(window.location.hash.slice(1));
     if (id) void openLesson(id);
@@ -257,9 +303,7 @@ async function boot() {
   try {
     const progress = await apiFetch("/elearning/progress");
     const rows = (progress && progress.progress) || [];
-    state.progress = new Map(
-      (Array.isArray(rows) ? rows : []).map((r) => [r.module_id, r])
-    );
+    state.progress = new Map((Array.isArray(rows) ? rows : []).map((r) => [r.module_id, r]));
   } catch {
     toast("Saved progress is temporarily unavailable. You can still read modules.", {
       type: "error",

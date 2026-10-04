@@ -9,6 +9,12 @@
             <directory>tests</directory>
         </testsuite>
     </testsuites>
+    <groups>
+        <exclude>
+            <group>mysql</group>
+            <group>live</group>
+        </exclude>
+    </groups>
     <source>
         <include>
             <directory>src</directory>

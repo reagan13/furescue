@@ -15,8 +15,14 @@ function proofCount(caseData) {
   return Array.isArray(state.proof) ? state.proof.length : 0;
 }
 
+function attachmentCount(caseData) {
+  const fromReport = photos(caseData && caseData.report && caseData.report.photo_urls);
+  if (fromReport.length) return fromReport.length;
+  return Array.isArray(state.attachments) ? state.attachments.length : 0;
+}
+
 function resolveButtonHtml(caseData) {
-  if (caseData.status !== "in_progress" || proofCount(caseData) < 1) return "";
+  if (caseData.status !== "in_progress" || proofCount(caseData) < 1 || attachmentCount(caseData) < 1) return "";
   return Button({
     text: "Resolve",
     variant: "default",
@@ -101,6 +107,8 @@ function hydrateResolveButton(caseData) {
 function hydrateCaseDetail() {
   if (!window.__PAGE_STATE__ || !state.caseData) return;
   hydrateResolveButton(state.caseData);
+  const filesCol = document.querySelector(".cd-col-files");
+  if (filesCol) filesCol.innerHTML = renderAttachments(state.caseData);
   const proofCol = document.querySelector(".cd-col-rescuer");
   if (proofCol) proofCol.innerHTML = renderProof(state.caseData);
   const workflowCol = document.querySelector(".cd-col-workflow");

@@ -33,6 +33,13 @@ export function panelTitle(filter) {
   return "All listings";
 }
 
+export function speciesLabel(species) {
+  const s = String(species || "").toLowerCase();
+  if (s === "cat") return "Cat";
+  if (s === "dog") return "Dog";
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : "—";
+}
+
 export function emptyMessage(filter, query) {
   if (query && query.trim()) return "No listings match.";
   if (filter === "pending_review") return "No listings awaiting review.";

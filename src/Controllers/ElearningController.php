@@ -41,7 +41,7 @@ class ElearningController extends AbstractController
             Response::error('FORBIDDEN', 'Module not published', 403);
             return;
         }
-        Response::success(['module' => $module]);
+        Response::success(['module' => $this->presentModule($module)]);
     }
 
     public function createModule(Request $req): void
@@ -117,6 +117,9 @@ class ElearningController extends AbstractController
         $v = new \App\Validation\Validator($req->body);
         $v->required('module_id')->uuid('module_id')
             ->required('status')->in('status', ['not_started','in_progress','completed']);
+        if (array_key_exists('read_pct', $req->body)) {
+            $v->optional('read_pct')->numeric('read_pct')->min('read_pct', 0);
+        }
         if (!$v->passes()) {
             Response::error('VALIDATION_ERROR', $v->firstError(), 400);
             return;
@@ -126,22 +129,114 @@ class ElearningController extends AbstractController
             Response::error('NOT_FOUND', 'Module not found', 404);
             return;
         }
+        $quiz = \App\Services\ElearningQuiz::decode($module['quiz_json'] ?? null);
+        $status = (string) $req->body['status'];
         $repo = $this->repo('elearning_progress');
         $existing = $repo->findByComposite(['resident_id','module_id'], [$req->user['id'], $req->body['module_id']]);
-        $completedAt = $req->body['status'] === 'completed' ? date('Y-m-d H:i:s') : null;
+        if ($existing && ($existing['status'] ?? '') === 'completed' && $status !== 'completed') {
+            $status = 'completed';
+        }
+        if ($status === 'completed' && $quiz !== [] && (int) ($existing['quiz_passed'] ?? 0) !== 1) {
+            Response::error('QUIZ_REQUIRED', 'Finish the lesson quiz to complete this module.', 409);
+            return;
+        }
+        $readPct = array_key_exists('read_pct', $req->body)
+            ? max(0, min(100, (int) $req->body['read_pct']))
+            : (int) ($existing['read_pct'] ?? 0);
+        if ($status === 'completed') {
+            $readPct = 100;
+        }
+        $completedAt = $status === 'completed' ? date('Y-m-d H:i:s') : ($existing['completed_at'] ?? null);
+        $payload = [
+            'status' => $status,
+            'completed_at' => $completedAt,
+            'read_pct' => $readPct,
+        ];
+        if ($status === 'completed') {
+            $payload['badge_earned'] = 1;
+            if ($quiz === []) {
+                $payload['quiz_passed'] = 1;
+            }
+        }
         if ($existing) {
-            $repo->update($existing['id'], ['status' => $req->body['status'], 'completed_at' => $completedAt]);
+            $repo->update($existing['id'], $payload);
             $row = $repo->find($existing['id']);
         } else {
-            $id = $repo->create([
+            $id = $repo->create(array_merge([
                 'id' => Database::uuidV4(),
                 'resident_id' => $req->user['id'],
                 'module_id' => $req->body['module_id'],
-                'status' => $req->body['status'],
-                'completed_at' => $completedAt,
-            ]);
+                'quiz_passed' => $payload['quiz_passed'] ?? 0,
+                'badge_earned' => $payload['badge_earned'] ?? 0,
+            ], $payload));
             $row = $repo->find($id);
         }
         Response::success(['progress' => $row]);
+    }
+
+    public function submitQuiz(Request $req): void
+    {
+        $v = new \App\Validation\Validator($req->body);
+        $v->required('module_id')->uuid('module_id');
+        if (!$v->passes()) {
+            Response::error('VALIDATION_ERROR', $v->firstError(), 400);
+            return;
+        }
+        $answers = $req->body['answers'] ?? null;
+        if (!is_array($answers)) {
+            Response::error('VALIDATION_ERROR', 'answers must be an array', 400);
+            return;
+        }
+        $module = $this->repo('elearning_modules')->find($req->body['module_id']);
+        if (!$module) {
+            Response::error('NOT_FOUND', 'Module not found', 404);
+            return;
+        }
+        if ($module['published_status'] !== 'published' && !in_array('elearning.write', $req->permissions, true)) {
+            Response::error('FORBIDDEN', 'Module not published', 403);
+            return;
+        }
+        $quiz = \App\Services\ElearningQuiz::decode($module['quiz_json'] ?? null);
+        if ($quiz === []) {
+            Response::error('NO_QUIZ', 'This module does not have a quiz yet.', 404);
+            return;
+        }
+        $result = \App\Services\ElearningQuiz::grade($quiz, array_values($answers));
+        $repo = $this->repo('elearning_progress');
+        $existing = $repo->findByComposite(['resident_id','module_id'], [$req->user['id'], $req->body['module_id']]);
+        $status = $result['passed'] ? 'completed' : 'in_progress';
+        $payload = [
+            'status' => $status,
+            'read_pct' => $result['passed'] ? 100 : (int) ($existing['read_pct'] ?? 0),
+            'quiz_passed' => $result['passed'] ? 1 : 0,
+            'badge_earned' => $result['passed'] ? 1 : (int) ($existing['badge_earned'] ?? 0),
+            'completed_at' => $result['passed'] ? date('Y-m-d H:i:s') : ($existing['completed_at'] ?? null),
+        ];
+        if ($existing) {
+            $repo->update($existing['id'], $payload);
+            $row = $repo->find($existing['id']);
+        } else {
+            $id = $repo->create(array_merge([
+                'id' => Database::uuidV4(),
+                'resident_id' => $req->user['id'],
+                'module_id' => $req->body['module_id'],
+            ], $payload));
+            $row = $repo->find($id);
+        }
+        Response::success(['result' => $result, 'progress' => $row]);
+    }
+
+    /**
+     * @param array<string,mixed> $module
+     * @return array<string,mixed>
+     */
+    private function presentModule(array $module): array
+    {
+        $quiz = \App\Services\ElearningQuiz::decode($module['quiz_json'] ?? null);
+        unset($module['quiz_json']);
+        $module['has_quiz'] = $quiz !== [];
+        $module['quiz'] = \App\Services\ElearningQuiz::publicQuestions($quiz);
+
+        return $module;
     }
 }

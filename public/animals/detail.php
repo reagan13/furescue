@@ -12,6 +12,9 @@ require_once dirname(__DIR__, 2) . '/views/path.php';
 require views_path('components/guard.php');
 
 $uid = (string) $_SESSION['user']['id'];
+$fromAdoptions = (string) ($_GET['from'] ?? '') === 'adoptions';
+$backHref = $fromAdoptions ? '/adoptions/' : '/animals/';
+$backLabel = $fromAdoptions ? 'Back to my adoptions' : 'Back to gallery';
 
 $residentUser = [
     'id' => $uid,
@@ -31,6 +34,8 @@ $pageState = [
     'accessToken' => $jwt->issueAccessToken(['id' => $uid, 'role' => $residentUser['role']]),
     'user' => $residentUser,
     'animalId' => (string) ($_GET['id'] ?? ''),
+    'backHref' => $backHref,
+    'backLabel' => $backLabel,
 ];
 $pageModules = ['/animals/js/animal-detail.js'];
 $pageTitle = 'FurEscue — Animal profile';
@@ -40,7 +45,7 @@ $importMapExtras = [
     'three' => 'https://unpkg.com/three@0.160.0/build/three.module.js',
     'three/addons/' => 'https://unpkg.com/three@0.160.0/examples/jsm/',
 ];
-$activeNav = 'browse animals';
-$residentShellTitle = 'Animal Profile';
+$activeNav = $fromAdoptions ? 'my adoptions' : 'browse animals';
+$residentShellTitle = $fromAdoptions ? 'My Adoptions' : 'Animal Profile';
 
 require views_path('layouts/resident.php');

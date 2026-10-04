@@ -23,12 +23,14 @@ function rowHtml(row) {
   const chip = STATUS_CHIPS[row.status] || STATUS_CHIPS.cancelled;
   const name = row.animal_name && String(row.animal_name).trim() !== "" ? String(row.animal_name).trim() : "an animal";
 
+  const profileHref = `/animals/detail.php?id=${encodeURIComponent(row.animal_id)}&from=adoptions`;
+
   return `
-  <li class="rrow" data-id="${esc(row.id)}" data-name="${esc(name)}">
-    <span class="rrow-icon"><i data-lucide="paw-print"></i></span>
-    <div class="rrow-main">
-      <p class="rrow-title">Application for ${esc(name)}</p>
-      <p class="rrow-sub">Applied ${esc(timeAgo(row.created_at))}${
+  <li class="rlist-row" data-id="${esc(row.id)}" data-name="${esc(name)}">
+    <span class="rlist-icon"><i data-lucide="paw-print"></i></span>
+    <div class="rlist-main">
+      <p class="rlist-title">Application for ${esc(name)}</p>
+      <p class="rlist-sub">Applied ${esc(timeAgo(row.created_at))}${
     row.message ? ` · “${esc(String(row.message))}”` : ""
   }</p>
       ${
@@ -36,16 +38,17 @@ function rowHtml(row) {
           ? `<p class="rform-error mt-1"><i data-lucide="alert-circle" class="h-3.5 w-3.5"></i><span>Reason: ${esc(String(row.rejection_reason))}</span></p>`
           : ""
       }
-      ${row.status === "approved" ? `<p class="rrow-sub mt-1 font-semibold text-primary">Congratulations! The shelter will contact you about next steps.</p>` : ""}
+      ${row.status === "approved" ? `<p class="rlist-sub mt-1 font-semibold text-primary">Congratulations! The shelter will contact you about next steps.</p>` : ""}
     </div>
-    <div class="rrow-side">
+    <div class="rlist-side">
       <span class="rchip ${chip.cls}">${esc(chip.text)}</span>
       ${
         row.status === "pending"
           ? `<button type="button" class="rbtn rbtn--ghost rbtn--sm" data-cancel><i data-lucide="x-circle"></i><span>Cancel</span></button>`
           : ""
       }
-      <a class="rbtn rbtn--ghost rbtn--sm" href="/animals/detail.php?id=${esc(row.animal_id)}"><i data-lucide="eye"></i><span>View</span></a>
+      <a class="rbtn rbtn--ghost rbtn--sm" href="/messages/?compose=1&amp;type=adoption&amp;id=${esc(row.id)}"><i data-lucide="message-square"></i><span>Message</span></a>
+      <a class="rbtn rbtn--ghost rbtn--sm" href="${esc(profileHref)}"><i data-lucide="eye"></i><span>View</span></a>
     </div>
   </li>`;
 }
@@ -126,10 +129,11 @@ function boot() {
   }
   initResidentShell();
 
-  document.querySelector(".rtabs").addEventListener("click", (event) => {
+  const tabs = document.querySelector(".rtabs");
+  tabs?.addEventListener("click", (event) => {
     const tab = event.target.closest(".rtab");
-    if (!tab) return;
-    document.querySelectorAll(".rtab").forEach((t) => {
+    if (!tab || !tabs.contains(tab)) return;
+    tabs.querySelectorAll(".rtab").forEach((t) => {
       t.classList.toggle("is-active", t === tab);
       t.setAttribute("aria-selected", t === tab ? "true" : "false");
     });
@@ -139,7 +143,8 @@ function boot() {
 
   el("adoption-list").addEventListener("click", (event) => {
     if (!event.target.closest("[data-cancel]")) return;
-    const rowEl = event.target.closest(".rrow");
+    event.preventDefault();
+    const rowEl = event.target.closest(".rlist-row");
     if (rowEl) cancelApplication(rowEl);
   });
 

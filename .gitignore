@@ -1,5 +1,6 @@
 # Local tooling / environment
 .env
+.env.test
 .pma/
 pma/
 tmp/
@@ -16,6 +17,15 @@ skills-lock.json
 # PHP
 /vendor/
 .phpunit.result.cache
+.phpunit.mysql.result.cache
+.phpunit.live.result.cache
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/e2e/.auth/
 
 # Node
 /node_modules/
@@ -25,6 +35,18 @@ scripts/.lucide-entry.mjs
 # User-uploaded profile photos
 /public/uploads/users/*
 !/public/uploads/users/.gitkeep
+
+# Generated demo animal portraits (written by seeders/lib/animal_portraits.php)
+/public/uploads/demo/animals/*
+!/public/uploads/demo/animals/.gitkeep
+
+# Resident listing profile photos
+/public/uploads/animals/listings/*
+!/public/uploads/animals/listings/.gitkeep
+
+# Runtime report photos and case proof uploads
+/public/uploads/reports/
+/public/uploads/cases/
 
 
 # Stray PHP session files

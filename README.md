@@ -58,6 +58,10 @@ docs/             Project documentation
 
 Folder-structure target (PGSO-shaped cascade, same product): [docs/technical/FOLDER_ARCHITECTURE.md](docs/technical/FOLDER_ARCHITECTURE.md) · [docs/technical/FOLDER_OVERHAUL_SPEC.md](docs/technical/FOLDER_OVERHAUL_SPEC.md).
 
+## Mobile client
+
+Resident and rescuer Android work lives in the sibling repo [`D:\pepot\furescue-app`](../furescue-app). It is a Flutter client of this API, not a second backend. Product truth stays here (`docs/study`, `docs/technical/WORKFLOWS.md`, `src/Http/Routes`).
+
 ## Documentation
 
 ### Study / Paper Documents ([docs/study](docs/study))
@@ -76,6 +80,7 @@ Folder-structure target (PGSO-shaped cascade, same product): [docs/technical/FOL
 |----------|----------|
 | [FOLDER_ARCHITECTURE.md](docs/technical/FOLDER_ARCHITECTURE.md) | Target folder + CSS cascade (PGSO discipline, FurEscue tokens) |
 | [FOLDER_OVERHAUL_SPEC.md](docs/technical/FOLDER_OVERHAUL_SPEC.md) | Overhaul keep-list, URL freeze, parallel workstreams |
+| [CONTEXT_PROMPT.md](docs/plans/CONTEXT_PROMPT.md) | Paste-ready Cursor prompt: product, repos, roles, status machines, hard rules |
 | [FOLDER_OVERHAUL_PROMPT.md](docs/plans/FOLDER_OVERHAUL_PROMPT.md) | Paste-ready Cursor / Multitask prompt for the overhaul |
 | [ARCHITECTURE_AUDIT.md](docs/technical/ARCHITECTURE_AUDIT.md) | Historical snapshot (pre-`public/` tree) — do not treat as live |
 | [FEATURES.md](docs/technical/FEATURES.md) | Feature inventory (as built) — what is implemented per feature area, with evidence |

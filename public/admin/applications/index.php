@@ -30,7 +30,8 @@ $adminUser = [
 try {
     $pdo = Database::connect();
     $stmt = $pdo->prepare(
-        "SELECT a.*, u.full_name AS applicant_name, an.name AS animal_name
+        "SELECT a.*, u.full_name AS applicant_name, an.name AS animal_name,
+                an.species, an.breed_type, an.photo_urls
          FROM adoptions a
          LEFT JOIN users u ON u.id = a.applicant_id
          LEFT JOIN animals an ON an.id = a.animal_id

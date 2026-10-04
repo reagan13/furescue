@@ -72,6 +72,16 @@ function seed_adoptions_listings(SeedContext $ctx): int
         $created++;
     }
 
+    $heal = $ctx->pdo->exec(
+        "UPDATE animals a
+         INNER JOIN adoption_listings l ON l.animal_id = a.id AND l.status = 'approved'
+         SET a.adoption_status = 'available'
+         WHERE a.deleted_at IS NULL AND a.adoption_status = 'not_listed'"
+    );
+    if (is_int($heal) && $heal > 0) {
+        echo "Adoption listings: marked {$heal} approved animals available.\n";
+    }
+
     return $created;
 }
 

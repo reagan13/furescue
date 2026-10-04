@@ -21,7 +21,8 @@ class PermissionMiddleware
             return Response::error('UNAUTHENTICATED', 'Authentication required', 401);
         }
         if (!Permissions::has($request->permissions, $this->permission)) {
-            return Response::error('FORBIDDEN', 'Permission not permitted: ' . $this->permission, 403);
+            error_log('[FORBIDDEN] missing permission ' . $this->permission);
+            return Response::error('FORBIDDEN', 'You do not have permission to do that.', 403);
         }
         return null;
     }

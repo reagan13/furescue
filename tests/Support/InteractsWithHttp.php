@@ -29,6 +29,7 @@ trait InteractsWithHttp
     {
         Response::$sent = false;
         Response::$statusCode = 200;
+        Response::$headers = [];
         ob_start();
         try {
             $handler();
@@ -40,6 +41,7 @@ trait InteractsWithHttp
             'status' => Response::$statusCode,
             'body' => is_array($decoded) ? $decoded : [],
             'raw' => $raw,
+            'headers' => Response::$headers,
         ];
     }
 }

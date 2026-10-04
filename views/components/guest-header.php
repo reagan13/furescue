@@ -45,14 +45,16 @@ $navLinkMarkup = $navLinkItems($navLinks);
       <?= $navActionsMarkup ?>
     </div>
 
-    <button id="menu-toggle" class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+    <button id="menu-toggle" class="nav-toggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="mobile-menu">
       <span class="bar"></span>
       <span class="bar"></span>
       <span class="bar"></span>
     </button>
   </div>
-
-  <div id="mobile-menu" class="mobile-menu">
+</header>
+<div id="mobile-menu" class="mobile-menu" aria-hidden="true">
+  <button type="button" id="mobile-menu-backdrop" class="mobile-menu-backdrop" tabindex="-1" aria-label="Close menu"></button>
+  <div class="mobile-menu-panel">
     <nav class="container mobile-menu-links">
       <?= $navLinkMarkup ?>
     </nav>
@@ -60,4 +62,4 @@ $navLinkMarkup = $navLinkItems($navLinks);
       <?= $navActionsMarkup ?>
     </div>
   </div>
-</header>
+</div>

@@ -38,11 +38,8 @@ class AuthMiddleware
         }
 
         if ($user->accountStatus() !== 'active') {
-            return Response::error(
-                'ACCOUNT_PENDING',
-                'Account is not active (status: ' . $user->accountStatus() . ')',
-                403
-            );
+            error_log('[ACCOUNT_PENDING] account_status=' . $user->accountStatus());
+            return Response::error('ACCOUNT_PENDING', 'This account is not active.', 403);
         }
 
         $request->user = $user->toArray();

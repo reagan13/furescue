@@ -6,8 +6,11 @@ use App\Database;
 
 class Response
 {
+    public const SERVER_ERROR_MESSAGE = 'Something went wrong. Try again.';
+
     public static bool $sent = false;
     public static int $statusCode = 200;
+    public static array $headers = [];
 
     public static function json(array $payload, int $status = 200): void
     {
@@ -59,6 +62,12 @@ class Response
             'data' => $data,
             'error' => ['code' => $code, 'message' => $message],
         ], $status);
+    }
+
+    public static function serverError(\Throwable $e): void
+    {
+        error_log('[SERVER_ERROR] ' . $e);
+        self::error('SERVER_ERROR', self::SERVER_ERROR_MESSAGE, 500);
     }
 
     public static function paginated($items, array $meta, int $status = 200): void

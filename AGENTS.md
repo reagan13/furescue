@@ -47,12 +47,18 @@ php bin\migrate.php --fresh --yes            :: drop all tables, re-apply migrat
 php seeders\seed.php                         :: idempotent full demo data (orchestrates domain seeders)
 php seeders\seed_users.php                   :: users, roles, and permissions only
 php -S 127.0.0.1:8000 -t public public\index.php   :: run everything
+php vendor\phpunit\phpunit\phpunit           :: daily SQLite suite
+php vendor\phpunit\phpunit\phpunit -c phpunit.mysql.xml.dist :: MySQL API (@group mysql)
+php vendor\phpunit\phpunit\phpunit -c phpunit.live.xml.dist :: HTTP cookie/CORS smoke (needs serve-test)
+bin\serve-test.bat                           :: php -S with .env.test (does not overwrite .env)
+npx playwright test                          :: browser matrix (needs serve-test)
 npm run build                                :: copy vendor ESM + rebuild Lucide subset + compile Tailwind
 npm run build:vendor                         :: copy clsx / tailwind-merge / cva into public/assets/js/vendor/
 npm run build:lucide                         :: rebuild local Lucide subset after adding icons
 ```
 
-- Tests are pure unit tests (`tests/`) — no database or server needed.
+- Default tests are in-process PHPUnit against SQLite (`php vendor\phpunit\phpunit\phpunit` / `composer test`). They do not need MySQL or `php -S`.
+- MySQL / live HTTP / Playwright / Flutter device tests use `furescue_test` and `.env.test`. Commands: `docs/technical/TESTING.md`. Never point those layers at the demo `furescue` database.
 - Setup details and demo accounts (`Password123!`): `docs/technical/HOW_TO_RUN.md`.
 
 ## Gotchas

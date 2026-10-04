@@ -3,21 +3,34 @@ import { createIcons, icons } from "lucide";
 function initMobileMenu() {
   const toggle = document.getElementById("menu-toggle");
   const menu = document.getElementById("mobile-menu");
+  const backdrop = document.getElementById("mobile-menu-backdrop");
   if (!toggle || !menu) return;
 
-  toggle.addEventListener("click", () => {
-    const open = menu.classList.toggle("is-open");
+  const setOpen = (open) => {
+    menu.classList.toggle("is-open", open);
     toggle.classList.toggle("is-open", open);
     toggle.setAttribute("aria-expanded", String(open));
+    menu.setAttribute("aria-hidden", String(!open));
+    document.documentElement.classList.toggle("nav-menu-open", open);
+  };
+
+  toggle.addEventListener("click", () => {
+    setOpen(!menu.classList.contains("is-open"));
   });
 
+  backdrop?.addEventListener("click", () => setOpen(false));
+
   menu.querySelectorAll("a").forEach((a) =>
-    a.addEventListener("click", () => {
-      menu.classList.remove("is-open");
-      toggle.classList.remove("is-open");
-      toggle.setAttribute("aria-expanded", "false");
-    })
+    a.addEventListener("click", () => setOpen(false))
   );
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") setOpen(false);
+  });
+
+  window.addEventListener("resize", () => {
+    if (window.matchMedia("(min-width: 768px)").matches) setOpen(false);
+  });
 }
 
 function initNavbarScroll() {

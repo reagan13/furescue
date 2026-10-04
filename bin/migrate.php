@@ -2,8 +2,7 @@
 
 require __DIR__ . '/../vendor/autoload.php';
 
-$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/..');
-$dotenv->safeLoad();
+App\Env::load();
 
 use App\Database;
 
@@ -109,7 +108,7 @@ if ($fresh && !$yes) {
 try {
     $pdo = Database::connect();
 } catch (\PDOException $e) {
-    fwrite(STDERR, "Cannot connect to the database. Check .env and ensure the database exists.\n");
+    fwrite(STDERR, "Cannot connect to the database. Check .env or .env.test and ensure the database exists.\n");
     fwrite(STDERR, $e->getMessage() . "\n");
     exit(1);
 }

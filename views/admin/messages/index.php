@@ -38,6 +38,7 @@ $adminChildren = '
       <p class="page-sub">Staff inbox for reports, cases, and adoption applications.</p>
     </div>
     <div class="page-head-actions">
+      ' . search_control('amsg-search', 'Search name, message…', '', 'amsg-search', 'aria-label="Search conversations"') . '
       ' . $composeBtn . '
     </div>
   </div>

@@ -37,8 +37,11 @@ function paintPhoto(url) {
   if (fallback) fallback.hidden = hasPhoto;
   if (remove) remove.hidden = !hasPhoto;
   document.querySelectorAll("[data-shell-avatar]").forEach((el) => {
-    const fallbackSrc = el.getAttribute("data-fallback-src") || "";
-    el.setAttribute("src", hasPhoto ? url : fallbackSrc);
+    el.setAttribute("src", hasPhoto ? url : "");
+    el.hidden = !hasPhoto;
+  });
+  document.querySelectorAll("[data-shell-avatar-fallback]").forEach((el) => {
+    el.hidden = hasPhoto;
   });
 }
 
@@ -142,6 +145,10 @@ export function initAccountPhoto(user) {
 }
 
 export function refreshPhotoInitials(name) {
+  const letters = initialsFrom(name);
   const fallback = document.getElementById("account-photo-fallback");
-  if (fallback) fallback.textContent = initialsFrom(name);
+  if (fallback) fallback.textContent = letters;
+  document.querySelectorAll("[data-shell-avatar-fallback]").forEach((el) => {
+    el.textContent = letters;
+  });
 }

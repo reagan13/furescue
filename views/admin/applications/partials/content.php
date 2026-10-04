@@ -29,7 +29,7 @@ $kpiData = [
 ];
 $kpiTiles = '';
 foreach ($kpiData as $k) {
-    $kpiTiles .= kpi_card_html($k);
+    $kpiTiles .= kpi_card_html($k + ['compact' => true]);
 }
 
 $filterDefs = [
@@ -112,7 +112,7 @@ $adminChildren = '
       ' . $exportCsvButton . '
     </div>
   </div>
-  <div id="application-kpis" class="kpi-grid">' . $kpiTiles . '</div>
+  <div id="application-kpis" class="kpi-grid kpi-grid--compact">' . $kpiTiles . '</div>
   <div class="panel">
     <div class="panel-head">
       <div class="panel-title-wrap">

@@ -6,6 +6,7 @@ import { toast } from "/shared/components/toast/toast.js";
 import { esc } from "/assets/js/lib/format.js";
 import { initSelect } from "/shared/components/select/select.js";
 import { openModelViewer, open360Viewer } from "./3d-viewer.js";
+import { parseUrls } from "./photos.js";
 
 const PER_PAGE = 12;
 
@@ -23,19 +24,6 @@ const state = {
 
 const registry = new Map();
 const el = (id) => document.getElementById(id);
-
-function parseUrls(value) {
-  if (!value) return [];
-  let parsed = value;
-  if (typeof parsed === "string") {
-    try {
-      parsed = JSON.parse(parsed);
-    } catch {
-      return [];
-    }
-  }
-  return Array.isArray(parsed) ? parsed.filter((u) => typeof u === "string" && u.trim() !== "") : [];
-}
 
 function label(value) {
   const raw = String(value || "").trim();

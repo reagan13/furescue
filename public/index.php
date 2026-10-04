@@ -13,8 +13,7 @@ use App\Services\GeoService;
 
 require __DIR__ . '/../vendor/autoload.php';
 
-$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/..');
-$dotenv->safeLoad();
+App\Env::load();
 
 $uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 if ($uri === '/' || $uri === '/index.html' || $uri === '/index.php') {
@@ -73,11 +72,12 @@ if (is_string($uri) && str_starts_with($uri, '/uploads/')) {
 
 set_error_handler(function ($no, $str, $file, $line) {
     if (!(error_reporting() & $no)) return false;
-    Response::error('SERVER_ERROR', "{$str} in {$file}:{$line}", 500);
+    error_log("[SERVER_ERROR] {$str} in {$file}:{$line}");
+    Response::error('SERVER_ERROR', Response::SERVER_ERROR_MESSAGE, 500);
     exit;
 });
 set_exception_handler(function (\Throwable $e) {
-    Response::error('SERVER_ERROR', $e->getMessage(), 500);
+    Response::serverError($e);
     exit;
 });
 

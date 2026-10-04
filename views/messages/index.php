@@ -3,6 +3,9 @@
     <h2 class="rpage-title">Messages</h2>
     <p class="rpage-sub">Talk with the rescue team about your reports, cases, and adoption applications.</p>
   </div>
+  <button type="button" class="rbtn rbtn--solid" id="msg-compose">
+    <i data-lucide="message-square-plus"></i><span>New message</span>
+  </button>
 </div>
 
 <div class="rcard msg-shell is-inbox-empty" id="msg-shell">

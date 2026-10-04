@@ -1,5 +1,7 @@
 # FurEscue — Feature Inventory (as built)
 
+> **Stale as of August 2026.** Do not treat this inventory as current. Trust `src/Http/Routes` and `docs/technical/WORKFLOWS.md`.
+
 **Date:** August 22, 2026
 **Method:** Every claim below was verified by reading the actual source. File paths are relative to the repo root.
 **Status legend:**

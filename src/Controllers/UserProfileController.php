@@ -43,7 +43,7 @@ class UserProfileController extends AbstractController
         try {
             $url = $this->photos->store($file);
         } catch (\RuntimeException $e) {
-            Response::error('SERVER_ERROR', $e->getMessage(), 500);
+            Response::serverError($e);
             return;
         }
         $previous = (string) ($user->profilePhotoUrl() ?? '');

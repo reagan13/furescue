@@ -135,6 +135,42 @@
   flex-direction: column;
   min-width: 0;
 }
+.rescuer-modal-head {
+  position: relative;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: center;
+  padding-top: 1.25rem;
+}
+.rescuer-modal-head .dialog-x {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+}
+.rescuer-modal-identity {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-width: 0;
+  padding-inline: 2rem;
+}
+.rescuer-modal-identity .dialog-title {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.rescuer-modal-identity .rescuer-avatar {
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 9999px;
+  clip-path: none;
+  object-fit: cover;
+}
+.rescuer-modal-identity .rescuer-avatar--initial {
+  font-size: 1.25rem;
+}
 .dialog-sub {
   font-family: var(--font-mono);
   font-size: 10px;

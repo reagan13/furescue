@@ -26,6 +26,7 @@ function safeTrendTone(tone) {
  * @param {"up"|"down"|"neutral"} [opts.trendTone]
  * @param {string|null} [opts.href] Renders as a link when set
  * @param {boolean} [opts.interactive] Focusable card without href (bind click after render)
+ * @param {boolean} [opts.compact] Smaller padding, icon, and value
  * @param {string} [opts.className]
  * @param {string} [opts.attrs] Extra HTML attributes (trusted)
  */
@@ -38,6 +39,7 @@ export function KpiCard({
   trendTone = "neutral",
   href = null,
   interactive = false,
+  compact = false,
   className = "",
   attrs = "",
 } = {}) {
@@ -46,7 +48,7 @@ export function KpiCard({
   const iconTone = safeTone(tone);
   const trendMod = safeTrendTone(trendIsObject ? trend.tone || trendTone : trendTone);
   const isInteractive = Boolean(href) || interactive;
-  const cls = ["kpi-card", isInteractive ? "kpi-card--interactive" : "", className]
+  const cls = ["kpi-card", compact ? "kpi-card--compact" : "", isInteractive ? "kpi-card--interactive" : "", className]
     .filter(Boolean)
     .join(" ");
   const extra = attrs ? ` ${attrs}` : "";
@@ -78,9 +80,10 @@ export function KpiCard({
  * @param {object[]} [opts.items] Passed through to KpiCard
  * @param {string} [opts.id]
  * @param {string} [opts.className]
+ * @param {boolean} [opts.compact]
  */
-export function KpiGrid({ items = [], id = "", className = "" } = {}) {
+export function KpiGrid({ items = [], id = "", className = "", compact = false } = {}) {
   const idAttr = id ? ` id="${esc(id)}"` : "";
-  const cls = ["kpi-grid", className].filter(Boolean).join(" ");
-  return `<div class="${cls}"${idAttr}>${items.map((item) => KpiCard(item)).join("")}</div>`;
+  const cls = ["kpi-grid", compact ? "kpi-grid--compact" : "", className].filter(Boolean).join(" ");
+  return `<div class="${cls}"${idAttr}>${items.map((item) => KpiCard({ ...item, compact: compact || item.compact })).join("")}</div>`;
 }

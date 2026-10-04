@@ -35,6 +35,11 @@ declare(strict_types=1);
  * initialized by public/assets/js/components/resident-shell.js.
  */
 
+if (!function_exists('shared_path')) {
+    require_once __DIR__ . '/../path.php';
+}
+require_once shared_path('icons/icons.php');
+
 $residentUser = $residentUser ?? [];
 $activeNav = $activeNav ?? '';
 $navBadges = $navBadges ?? [];
@@ -124,7 +129,7 @@ $residentNavItems = static function (array $items) use ($esc, $navBadges, $activ
         $tone = $isActive ? ' rside-link--active' : '';
         $out .= '
       <a href="' . $esc($item['href'] ?? '#') . '" class="rside-link' . $tone . '">
-        <i data-lucide="' . $esc($item['icon'] ?? '') . '"></i> <span>' . $esc($item['label'] ?? '') . '</span>
+        ' . lucide_icon((string) ($item['icon'] ?? '')) . ' <span>' . $esc($item['label'] ?? '') . '</span>
         ' . $badge . '
       </a>';
     }
@@ -140,21 +145,28 @@ foreach ($residentNavGroups as $group) {
     </div>';
 }
 
-$residentAvatarFallback = 'https://i.pravatar.cc/64?img=47';
-$residentAvatarSrc = trim((string) ($residentUser['profile_photo_url'] ?? '')) !== ''
-    ? (string) $residentUser['profile_photo_url']
-    : $residentAvatarFallback;
+$residentAvatarSrc = trim((string) ($residentUser['profile_photo_url'] ?? ''));
+$residentHasPhoto = $residentAvatarSrc !== '';
+$residentInitials = '';
+foreach (array_slice(preg_split('/\s+/u', trim((string) ($residentUser['full_name'] ?? ''))) ?: [], 0, 2) as $word) {
+    if ($word === '') {
+        continue;
+    }
+    $residentInitials .= mb_strtoupper(mb_substr($word, 0, 1, 'UTF-8'), 'UTF-8');
+}
+$residentInitials = $residentInitials !== '' ? $residentInitials : '?';
 
 $residentMenuBase = 'relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground';
 $residentProfileName = trim((string) ($residentUser['full_name'] ?? '')) !== ''
     ? (string) $residentUser['full_name']
     : 'My Account';
 
-$residentChrome = static function () use ($esc, $residentGroupsHtml, $residentShellTitle, $residentAvatarSrc, $residentAvatarFallback, $residentMenuBase, $residentProfileName, $residentUser, $rsideTag): string {
+$residentChrome = static function () use ($esc, $residentGroupsHtml, $residentShellTitle, $residentAvatarSrc, $residentHasPhoto, $residentInitials, $residentMenuBase, $residentProfileName, $residentUser, $rsideTag): string {
     $profileMenu = '
       <div id="profile-menu" data-dropdown class="relative">
         <button type="button" data-dropdown-trigger class="rtop-user" aria-haspopup="menu" aria-expanded="false" aria-label="Account menu">
-          <img src="' . $esc($residentAvatarSrc) . '" alt="Your avatar" data-shell-avatar data-fallback-src="' . $esc($residentAvatarFallback) . '">
+          <img src="' . $esc($residentAvatarSrc) . '" alt="" data-shell-avatar' . ($residentHasPhoto ? '' : ' hidden') . '>
+          <span class="rtop-user-fallback" data-shell-avatar-fallback' . ($residentHasPhoto ? ' hidden' : '') . '>' . $esc($residentInitials) . '</span>
         </button>
         <div data-dropdown-content role="menu" class="absolute top-full z-50 mt-1 hidden min-w-56 overflow-hidden rounded-md border border-input bg-card p-1 text-card-foreground shadow-md right-0">
           <div class="px-2 py-1.5">
@@ -163,13 +175,13 @@ $residentChrome = static function () use ($esc, $residentGroupsHtml, $residentSh
           </div>
           <div class="-mx-1 my-1 h-px bg-muted"></div>
           <a href="/account/" class="' . $residentMenuBase . '">
-            <i data-lucide="user" class="lucide h-4 w-4"></i><span>Account</span>
+            ' . lucide_icon('user', 'h-4 w-4') . '<span>Account</span>
           </a>
           <a href="/notifications/" class="' . $residentMenuBase . '">
-            <i data-lucide="bell" class="lucide h-4 w-4"></i><span>Notifications</span>
+            ' . lucide_icon('bell', 'h-4 w-4') . '<span>Notifications</span>
           </a>
           <a href="/auth/logout.php" data-action="logout" class="' . $residentMenuBase . ' text-destructive hover:bg-destructive/10 hover:text-destructive">
-            <i data-lucide="log-out" class="lucide h-4 w-4"></i><span>Log Out</span>
+            ' . lucide_icon('log-out', 'h-4 w-4') . '<span>Log Out</span>
           </a>
         </div>
       </div>';
@@ -177,7 +189,7 @@ $residentChrome = static function () use ($esc, $residentGroupsHtml, $residentSh
     return '<div class="resident-shell">
   <aside id="rside" class="rside">
     <div class="rside-head">
-      <div class="rside-logo"><i data-lucide="paw-print"></i></div>
+      <div class="rside-logo">' . lucide_icon('paw-print') . '</div>
       <div>
         <div class="rside-brand">FurEscue</div>
         <div class="rside-tag">' . $esc($rsideTag) . '</div>
@@ -191,15 +203,15 @@ $residentChrome = static function () use ($esc, $residentGroupsHtml, $residentSh
   <div class="rmain-wrap">
     <header class="rtop">
       <button id="rmenu-toggle" class="rtop-menu" aria-label="Open menu" aria-expanded="false" aria-controls="rside">
-        <i data-lucide="menu"></i>
+        ' . lucide_icon('menu') . '
       </button>
 
       <p class="rtop-title">' . $esc($residentShellTitle) . '</p>
 
       <div class="rtop-actions">
-        <span class="rtop-meta"><i data-lucide="calendar"></i> <span data-resident-date></span> &middot; City of Mati</span>
+        <span class="rtop-meta">' . lucide_icon('calendar') . ' <span data-resident-date></span> &middot; City of Mati</span>
         <a href="/notifications/" class="rtop-bell" aria-label="Notifications">
-          <i data-lucide="bell"></i>
+          ' . lucide_icon('bell') . '
           <span class="rtop-bell-count" id="notif-badge" data-nav-badge="notifications" hidden></span>
         </a>
         <span class="rtop-divider"></span>' . $profileMenu . '
@@ -208,7 +220,13 @@ $residentChrome = static function () use ($esc, $residentGroupsHtml, $residentSh
     <main class="resident-main">';
 };
 
-$residentChromeEnd = '</main>
+$residentChromeEnd = '
+      <div class="rfeedback-bar">
+        <button type="button" class="rbtn rbtn--ghost rbtn--sm" id="rfeedback-open">
+          <i data-lucide="flag"></i><span>Report a problem</span>
+        </button>
+      </div>
+    </main>
   </div>
 </div>';
 

@@ -35,7 +35,7 @@ $badgeHtml = static function (string $text, string $variant = 'default', string 
 
 $statusRaw = (string) ($caseRow['status'] ?? '');
 $isResolved = $statusRaw === 'resolved';
-$showResolve = $statusRaw === 'in_progress' && count($proofUrls) >= 1;
+$showResolve = $statusRaw === 'in_progress' && count($proofUrls) >= 1 && count($attachments) >= 1;
 $stampCls = ($statusRaw === 'in_progress' || $statusRaw === 'resolved') ? 'stamp--accent' : 'stamp--coral';
 
 $locationBtn = button_html('See location', 'outline', 'sm', '', 'map-pin', 'data-cd-action="location"');
@@ -234,50 +234,7 @@ if ($report === null) {
   </div>';
 }
 
-$attachmentCount = count($attachments);
-$filesGallery = $attachmentCount > 0
-    ? '<div class="cd-files">' . implode('', array_map(
-        static fn(string $f): string => '<a class="cd-file" href="' . e($f) . '" target="_blank" rel="noopener"><img src="' . e($f) . '" alt="Case attachment" loading="lazy"></a>',
-        $attachments
-    )) . '</div>'
-    : '<div class="empty-state"><i data-lucide="image-off"></i><span>No attachments submitted.</span></div>';
-
-$attachmentsPanelHtml = '
-  <div class="panel case-detail-panel">
-    <div class="panel-head">
-      <div class="panel-title-wrap">
-        <i data-lucide="paperclip"></i>
-        <h2 class="panel-title">Attached files</h2>
-      </div>
-      ' . ($attachmentCount > 0 ? '<span class="stamp stamp--sm stamp--muted">' . e((string) $attachmentCount) . '</span>' : '') . '
-    </div>
-    <div class="panel-body">' . $filesGallery . '</div>
-  </div>';
-
-$proofCount = count($proofUrls);
-$proofGallery = $proofCount > 0
-    ? '<div class="cd-files">' . implode('', array_map(
-        static fn(string $p): string => '<a class="cd-file" href="' . e($p) . '" target="_blank" rel="noopener"><img src="' . e($p) . '" alt="Rescue proof" loading="lazy"></a>',
-        $proofUrls
-    )) . '</div>'
-    : '<div class="empty-state"><i data-lucide="image-off"></i><span>No rescue proof uploaded.</span></div>';
-$proofMeta = $proofCount > 0
-    ? '<div class="cd-rescuer-meta">' . $badgeHtml($rescuerName !== '' ? $rescuerName : 'Rescuer', 'secondary', 'user') . '</div>'
-    : '';
-
-$proofPanelHtml = '
-  <div class="panel case-detail-panel">
-    <div class="panel-head">
-      <div class="panel-title-wrap">
-        <i data-lucide="camera"></i>
-        <h2 class="panel-title">Rescue proof</h2>
-      </div>
-      ' . $proofMeta . '
-    </div>
-    <div class="panel-body">
-      ' . $proofGallery . '
-    </div>
-  </div>';
+require __DIR__ . '/partials/files.php';
 
 $adminChildren = $pageHeadHtml
     . '<div class="case-detail-grid">'

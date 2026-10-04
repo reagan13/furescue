@@ -4,29 +4,14 @@ namespace App\Services;
 
 use App\Database;
 use App\Entity\RescueCase;
+use App\Http\DomainException;
+use App\Http\Response;
 use App\Repositories\CaseRepository;
 use App\Repositories\ReportRepository;
 use PDO;
 
-class CaseWorkflowException extends \RuntimeException
+class CaseWorkflowException extends DomainException
 {
-    public function __construct(
-        private string $errorCode,
-        string $message,
-        private int $httpStatus = 400
-    ) {
-        parent::__construct($message);
-    }
-
-    public function errorCode(): string
-    {
-        return $this->errorCode;
-    }
-
-    public function httpStatus(): int
-    {
-        return $this->httpStatus;
-    }
 }
 
 class CaseWorkflowService
@@ -80,7 +65,9 @@ class CaseWorkflowService
     public function addProof(string $caseId, array $user, array $files): array
     {
         $case = $this->requireCase($caseId);
-        $this->requireAssignedRescuer($case, $user);
+        if (($user['role'] ?? null) !== 'admin') {
+            $this->requireAssignedRescuer($case, $user);
+        }
         if ($case->status() !== 'in_progress') {
             throw new CaseWorkflowException('INVALID_STATUS', 'Proof can only be added while the case is in progress', 422);
         }
@@ -102,7 +89,8 @@ class CaseWorkflowService
             } catch (\InvalidArgumentException $e) {
                 throw new CaseWorkflowException('VALIDATION_ERROR', $e->getMessage(), 400);
             } catch (\RuntimeException $e) {
-                throw new CaseWorkflowException('SERVER_ERROR', $e->getMessage(), 500);
+                error_log('[SERVER_ERROR] ' . $e);
+                throw new CaseWorkflowException('SERVER_ERROR', Response::SERVER_ERROR_MESSAGE, 500);
             }
         }
 
@@ -127,6 +115,9 @@ class CaseWorkflowService
         }
         if (count($this->photoList($case)) < 1) {
             throw new CaseWorkflowException('PROOF_REQUIRED', 'At least one proof photo is required before resolve', 422);
+        }
+        if (count($this->reportPhotoList($case)) < 1) {
+            throw new CaseWorkflowException('ATTACHMENTS_REQUIRED', 'At least one attached file is required before resolve', 422);
         }
 
         $this->cases->update($case->id(), ['status' => 'resolved']);
@@ -176,7 +167,21 @@ class CaseWorkflowService
 
     private function photoList(RescueCase $case): array
     {
-        $existing = json_decode((string) $case->resolutionPhotos(), true);
+        return $this->urlList($case->resolutionPhotos());
+    }
+
+    private function reportPhotoList(RescueCase $case): array
+    {
+        $report = $this->reports->find((string) $case->reportId());
+        if (!$report) {
+            return [];
+        }
+        return $this->urlList($report->photoUrls());
+    }
+
+    private function urlList(mixed $value): array
+    {
+        $existing = is_array($value) ? $value : json_decode((string) $value, true);
         if (!is_array($existing)) {
             return [];
         }

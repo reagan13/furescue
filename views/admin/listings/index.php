@@ -13,6 +13,17 @@ const LISTING_STATUS_LABELS = [
 ];
 const LISTING_PAGE_SIZE = 20;
 
+$listingSpecies = static function (?string $species): string {
+    $s = strtolower(trim((string) $species));
+    if ($s === 'cat') {
+        return 'Cat';
+    }
+    if ($s === 'dog') {
+        return 'Dog';
+    }
+    return $s !== '' ? title_case($s) : '—';
+};
+
 $listingStamp = static function (?string $status): string {
     if ($status === 'pending_review') {
         return 'stamp--coral';
@@ -57,7 +68,7 @@ $kpiData = [
 ];
 $kpiTiles = '';
 foreach ($kpiData as $k) {
-    $kpiTiles .= kpi_card_html($k);
+    $kpiTiles .= kpi_card_html($k + ['compact' => true]);
 }
 
 $filterDefs = [
@@ -78,6 +89,7 @@ $rowsHtml = '';
 foreach ($pageRows as $row) {
     $status = (string) ($row['status'] ?? '');
     $name = trim((string) ($row['animal_name'] ?? '')) !== '' ? (string) $row['animal_name'] : 'Unnamed';
+    $species = $listingSpecies($row['species'] ?? null);
     $poster = trim((string) ($row['poster_name'] ?? '')) !== '' ? (string) $row['poster_name'] : 'Unknown poster';
     $label = LISTING_STATUS_LABELS[$status] ?? title_case($status);
     $actions = '';
@@ -89,6 +101,7 @@ foreach ($pageRows as $row) {
     $rowsHtml .= '
     <tr data-id="' . e((string) ($row['id'] ?? '')) . '">
       <td class="table-cell table-cell--strong">' . e($name) . '</td>
+      <td class="table-cell">' . e($species) . '</td>
       <td class="table-cell">' . e($poster) . '</td>
       <td class="table-cell"><span class="stamp stamp--sm ' . e($listingStamp($status)) . '">' . e($label) . '</span></td>
       <td class="table-cell table-cell--mono table-cell--muted">' . e(time_ago($row['created_at'] ?? null)) . '</td>
@@ -107,7 +120,7 @@ if ($listings === []) {
       <table class="table">
         <thead>
           <tr class="table-head">
-            <th>Animal</th><th>Poster</th><th>Status</th><th>Posted</th><th class="table-cell--right">Action</th>
+            <th>Animal</th><th>Species</th><th>Poster</th><th>Status</th><th>Posted</th><th class="table-cell--right">Action</th>
           </tr>
         </thead>
         <tbody>' . $rowsHtml . '</tbody>
@@ -127,7 +140,7 @@ $adminChildren = '
       ' . button_html('Export CSV', 'outline', icon: 'download', attrs: 'data-export="csv"') . '
     </div>
   </div>
-  <div id="listing-kpis" class="kpi-grid">' . $kpiTiles . '</div>
+  <div id="listing-kpis" class="kpi-grid kpi-grid--compact">' . $kpiTiles . '</div>
   <div class="panel">
     <div class="panel-head">
       <div class="panel-title-wrap">
@@ -139,7 +152,7 @@ $adminChildren = '
       </div>
     </div>
     <div id="listing-filters">
-      ' . toolbar_html(search_control('listing-search', 'Search animal, poster…')) . '
+      ' . toolbar_html(search_control('listing-search', 'Search animal, species, poster…')) . '
     </div>
     <div id="listing-table" class="panel-body">' . $tableInner . '</div>
   </div>';

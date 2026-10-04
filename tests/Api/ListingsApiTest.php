@@ -61,6 +61,40 @@ class ListingsApiTest extends ApiTestCase
         $this->assertError($this->post('/api/v1/adoption-listings', [], $this->actingAs($resident)), 'VALIDATION_ERROR', 400);
     }
 
+    public function testCreateFromProfileDoesNotRequireHealthRecords(): void
+    {
+        $resident = $this->seedResident();
+        $data = $this->assertOk($this->post(
+            '/api/v1/adoption-listings',
+            [
+                'name' => 'Ligaya',
+                'species' => 'dog',
+                'sex' => 'female',
+                'description' => 'Friendly aspin rescued near the boulevard. Needs a quiet home.',
+                'photo_urls' => ['/uploads/demo/animals/ligaya.svg'],
+            ],
+            $this->actingAs($resident)
+        ), 201);
+        $this->assertSame('pending_review', $data['listing']['status']);
+        $this->assertSame('Ligaya', $data['animal']['name']);
+        $this->assertSame('resident_listing', $data['animal']['source']);
+    }
+
+    public function testCreateFromProfileRequiresPhoto(): void
+    {
+        $resident = $this->seedResident();
+        $this->assertError($this->post(
+            '/api/v1/adoption-listings',
+            [
+                'name' => 'Sky',
+                'species' => 'dog',
+                'sex' => 'male',
+                'description' => 'A rescued aspin looking for a home.',
+            ],
+            $this->actingAs($resident)
+        ), 'VALIDATION_ERROR', 400);
+    }
+
     public function testCreateRejectsInvalidUuid(): void
     {
         $resident = $this->seedResident();
@@ -135,6 +169,33 @@ class ListingsApiTest extends ApiTestCase
         $this->assertSame($listing['id'], $data['listing']['id']);
     }
 
+    public function testResidentCannotShowSomeoneElsesListing(): void
+    {
+        $owner = $this->seedResident();
+        $other = $this->seedResident();
+        $listing = $this->seedListing(['posted_by' => $owner['id']]);
+        $response = $this->get(
+            '/api/v1/adoption-listings/' . $listing['id'],
+            [],
+            $this->actingAs($other)
+        );
+        $this->assertError($response, 'FORBIDDEN', 403);
+        $this->assertSame('Not your listing', $response['body']['error']['message'] ?? null);
+    }
+
+    public function testAdminCanShowAnyListing(): void
+    {
+        $owner = $this->seedResident();
+        $admin = $this->seedAdmin();
+        $listing = $this->seedListing(['posted_by' => $owner['id']]);
+        $data = $this->assertOk($this->get(
+            '/api/v1/adoption-listings/' . $listing['id'],
+            [],
+            $this->actingAs($admin)
+        ));
+        $this->assertSame($listing['id'], $data['listing']['id']);
+    }
+
     public function testShowListingNotFound(): void
     {
         $resident = $this->seedResident();
@@ -200,5 +261,17 @@ class ListingsApiTest extends ApiTestCase
             [],
             $this->actingAs($admin)
         ), 'NOT_FOUND', 404);
+    }
+
+    public function testAdminListIncludesAnimalSpecies(): void
+    {
+        $admin = $this->seedAdmin();
+        $animal = $this->seedAnimal(['name' => 'Ace', 'species' => 'dog']);
+        $this->seedListing(['animal_id' => $animal['id']]);
+        $response = $this->get('/api/v1/adoption-listings', [], $this->actingAs($admin));
+        $items = $this->assertOk($response);
+        $this->assertNotEmpty($items);
+        $this->assertSame('dog', $items[0]['species'] ?? null);
+        $this->assertSame('Ace', $items[0]['animal_name'] ?? null);
     }
 }

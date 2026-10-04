@@ -86,7 +86,8 @@ class AuthController extends AbstractController
             return;
         }
         if ($user->accountStatus() !== 'active') {
-            Response::error('ACCOUNT_PENDING', 'Account is not active (status: ' . $user->accountStatus() . ')', 403);
+            error_log('[ACCOUNT_PENDING] account_status=' . $user->accountStatus());
+            Response::error('ACCOUNT_PENDING', 'This account is not active.', 403);
             return;
         }
 
@@ -137,7 +138,8 @@ class AuthController extends AbstractController
         }
 
         if ($user->accountStatus() !== 'active') {
-            Response::error('ACCOUNT_PENDING', 'Account is not active', 403);
+            error_log('[ACCOUNT_PENDING] account_status=' . $user->accountStatus());
+            Response::error('ACCOUNT_PENDING', 'This account is not active.', 403);
             return;
         }
 

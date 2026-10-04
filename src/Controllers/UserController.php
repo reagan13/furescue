@@ -26,7 +26,14 @@ class UserController extends AbstractController
 
     public function me(Request $req): void
     {
-        Response::success(['user' => $req->user]);
+        $user = $req->user;
+        if (($user['role'] ?? '') === 'rescuer') {
+            $duty = $this->repo('rescuer_duty_status')->findBy('user_id', $user['id']);
+            $user['duty_status'] = is_array($duty)
+                ? (string) ($duty['status'] ?? 'off_duty')
+                : 'off_duty';
+        }
+        Response::success(['user' => $user]);
     }
 
     public function index(Request $req): void
@@ -125,7 +132,7 @@ class UserController extends AbstractController
         try {
             $user = $this->admin->create($req->body);
         } catch (UserAdminException $e) {
-            Response::error($e->errorCode(), $e->getMessage(), $e->httpStatus());
+            Response::error($e->errorCode(), $e->publicMessage(), $e->httpStatus());
             return;
         }
 
@@ -143,7 +150,7 @@ class UserController extends AbstractController
         try {
             $this->admin->delete($user, $req->user);
         } catch (UserAdminException $e) {
-            Response::error($e->errorCode(), $e->getMessage(), $e->httpStatus());
+            Response::error($e->errorCode(), $e->publicMessage(), $e->httpStatus());
             return;
         }
 
@@ -217,7 +224,7 @@ class UserController extends AbstractController
         try {
             $data = $this->admin->prepareUpdate($user, $data, $req->body, $isAdmin, $isSelf);
         } catch (UserAdminException $e) {
-            Response::error($e->errorCode(), $e->getMessage(), $e->httpStatus());
+            Response::error($e->errorCode(), $e->publicMessage(), $e->httpStatus());
             return;
         }
         if ($data === []) {

@@ -45,7 +45,7 @@ export function ListingsPage(user) {
     notifications: 0,
     badges: {},
     activeNav: "listings",
-    children: [PageHead(), `<div id="listing-kpis" class="kpi-grid">${kpis}</div>`, ListingsPanel()].join(""),
+    children: [PageHead(), `<div id="listing-kpis" class="kpi-grid kpi-grid--compact">${kpis}</div>`, ListingsPanel()].join(""),
   });
 }
 

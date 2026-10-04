@@ -8,6 +8,7 @@
 
 require_once __DIR__ . '/lib/bootstrap.php';
 require_once __DIR__ . '/lib/catalog.php';
+require_once __DIR__ . '/lib/animal_portraits.php';
 
 function seed_animals(SeedContext $ctx): void
 {
@@ -23,6 +24,7 @@ function seed_animals(SeedContext $ctx): void
     $fromResidents = seed_animals_resident_listings($ctx);
     $ctx->loadAnimals();
     echo 'Animals: ' . ($fromCases + $fromResidents) . ' new, ' . count($ctx->animalIds) . " active.\n";
+    seed_animal_portraits($ctx);
 }
 
 function seed_animals_from_cases(SeedContext $ctx): int

@@ -5,29 +5,13 @@ namespace App\Services;
 use App\Auth\PasswordService;
 use App\Database;
 use App\Entity\User;
+use App\Http\DomainException;
 use App\Repositories\UserRepository;
 use PDO;
 use PDOException;
 
-class UserAdminException extends \RuntimeException
+class UserAdminException extends DomainException
 {
-    public function __construct(
-        private string $errorCode,
-        string $message,
-        private int $httpStatus = 400
-    ) {
-        parent::__construct($message);
-    }
-
-    public function errorCode(): string
-    {
-        return $this->errorCode;
-    }
-
-    public function httpStatus(): int
-    {
-        return $this->httpStatus;
-    }
 }
 
 class UserAdminService

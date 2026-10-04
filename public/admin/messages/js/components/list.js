@@ -1,10 +1,26 @@
 import { createIcons, icons } from "lucide";
 import { timeAgo } from "/assets/js/lib/format.js";
 import { state, threadKey } from "../state.js";
-import { esc, initialOf } from "../util.js";
+import { contextLabel, esc, initialOf } from "../util.js";
 
 const EMPTY_COPY =
   "Conversations appear when someone messages this admin, or after you start a conversation.";
+
+function visibleThreads() {
+  const q = String(state.query || "").trim().toLowerCase();
+  if (!q) return state.threads;
+  return state.threads.filter((t) => {
+    const hay = [
+      t.other_user_name,
+      t.last_message,
+      t.related_type,
+      contextLabel(t.related_type),
+    ]
+      .map((part) => String(part || "").toLowerCase())
+      .join(" ");
+    return hay.includes(q);
+  });
+}
 
 export function ThreadList() {
   if (state.loadError) {
@@ -25,7 +41,17 @@ export function ThreadList() {
       </div>`;
   }
 
-  return state.threads
+  const threads = visibleThreads();
+  if (!threads.length) {
+    return `
+      <div class="amsg-empty">
+        <i data-lucide="search-x"></i>
+        <p class="amsg-empty-title">No matching conversations</p>
+        <p class="amsg-empty-text">Try a different name or message snippet.</p>
+      </div>`;
+  }
+
+  return threads
     .map((t) => {
       const key = threadKey(t);
       const unread = Number(t.unread_count) > 0;

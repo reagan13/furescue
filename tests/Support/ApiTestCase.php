@@ -31,6 +31,37 @@ abstract class ApiTestCase extends TestCase
 
     protected function setUp(): void
     {
+        $this->applyJwtTestEnv();
+
+        $this->pdo = $this->createPdo();
+        $this->jwt = new JwtService();
+        $this->passwords = new PasswordService();
+
+        $this->router = new Router();
+        RouteLoader::register($this->router, [
+            'pdo' => $this->pdo,
+            'jwt' => $this->jwt,
+            'password' => $this->passwords,
+            'google' => new GoogleAuthService(),
+            'dedup' => $this->makeDedup(),
+            'geo' => new GeoService(),
+            'authMw' => new AuthMiddleware($this->pdo, $this->jwt),
+        ]);
+    }
+
+    protected function applyJwtTestEnv(): void
+    {
+        $_ENV['JWT_SECRET'] = $_ENV['JWT_SECRET'] ?? 'api_test_secret';
+        $_ENV['JWT_REFRESH_SECRET'] = $_ENV['JWT_REFRESH_SECRET'] ?? 'api_test_refresh_secret';
+        $_ENV['JWT_ALGO'] = $_ENV['JWT_ALGO'] ?? 'HS256';
+        $_ENV['JWT_TTL_MINUTES'] = $_ENV['JWT_TTL_MINUTES'] ?? '60';
+        $_ENV['JWT_REFRESH_TTL_DAYS'] = $_ENV['JWT_REFRESH_TTL_DAYS'] ?? '7';
+        $_ENV['GOOGLE_CLIENT_ID'] = $_ENV['GOOGLE_CLIENT_ID'] ?? 'api-test-client-id';
+        $_ENV['DEVICE_API_KEY'] = $_ENV['DEVICE_API_KEY'] ?? 'test-device-key';
+    }
+
+    protected function createPdo(): PDO
+    {
         if (!in_array('sqlite', PDO::getAvailableDrivers(), true)) {
             $this->markTestSkipped('pdo_sqlite driver is not available.');
         }
@@ -44,20 +75,12 @@ abstract class ApiTestCase extends TestCase
         $_ENV['GOOGLE_CLIENT_ID'] = 'api-test-client-id';
         $_ENV['DEVICE_API_KEY'] = 'test-device-key';
 
-        $this->pdo = SqliteTestDatabase::create();
-        $this->jwt = new JwtService();
-        $this->passwords = new PasswordService();
+        return SqliteTestDatabase::create();
+    }
 
-        $this->router = new Router();
-        RouteLoader::register($this->router, [
-            'pdo' => $this->pdo,
-            'jwt' => $this->jwt,
-            'password' => $this->passwords,
-            'google' => new GoogleAuthService(),
-            'dedup' => new TestDedupService($this->pdo),
-            'geo' => new GeoService(),
-            'authMw' => new AuthMiddleware($this->pdo, $this->jwt),
-        ]);
+    protected function makeDedup(): DedupService
+    {
+        return new TestDedupService($this->pdo);
     }
 
     protected function get(string $path, array $query = [], ?string $token = null): array
@@ -247,13 +270,16 @@ abstract class ApiTestCase extends TestCase
             'validation_status' => $overrides['validation_status'] ?? 'validated',
             'status' => $overrides['status'] ?? 'pending_verification',
             'address_text' => $overrides['address_text'] ?? null,
+            'photo_urls' => is_array($overrides['photo_urls'] ?? null)
+                ? json_encode($overrides['photo_urls'], JSON_UNESCAPED_SLASHES)
+                : ($overrides['photo_urls'] ?? null),
         ];
         $this->pdo->prepare(
-            "INSERT INTO reports (id, resident_id, animal_description, latitude, longitude, address_text, content_hash, validation_status, status)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            "INSERT INTO reports (id, resident_id, animal_description, latitude, longitude, address_text, photo_urls, content_hash, validation_status, status)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         )->execute([
             $row['id'], $row['resident_id'], $row['animal_description'], $row['latitude'], $row['longitude'],
-            $row['address_text'], $row['content_hash'], $row['validation_status'], $row['status'],
+            $row['address_text'], $row['photo_urls'], $row['content_hash'], $row['validation_status'], $row['status'],
         ]);
         return $row;
     }
@@ -318,14 +344,15 @@ abstract class ApiTestCase extends TestCase
             'title' => $overrides['title'] ?? 'Street dog basics',
             'category' => $overrides['category'] ?? 'general_care',
             'content_body' => $overrides['content_body'] ?? 'Feed, water, and call a rescuer.',
+            'quiz_json' => $overrides['quiz_json'] ?? null,
             'published_status' => $overrides['published_status'] ?? 'published',
             'created_by' => $overrides['created_by'] ?? Database::uuidV4(),
         ];
         $this->pdo->prepare(
-            "INSERT INTO elearning_modules (id, title, category, content_body, published_status, created_by)
-             VALUES (?, ?, ?, ?, ?, ?)"
+            "INSERT INTO elearning_modules (id, title, category, content_body, quiz_json, published_status, created_by)
+             VALUES (?, ?, ?, ?, ?, ?, ?)"
         )->execute([
-            $row['id'], $row['title'], $row['category'], $row['content_body'],
+            $row['id'], $row['title'], $row['category'], $row['content_body'], $row['quiz_json'],
             $row['published_status'], $row['created_by'],
         ]);
         return $row;

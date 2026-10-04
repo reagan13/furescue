@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+         cacheResultFile=".phpunit.mysql.result.cache">
+    <testsuites>
+        <testsuite name="FURescue MySQL">
+            <directory>tests/Mysql</directory>
+        </testsuite>
+    </testsuites>
+    <groups>
+        <include>
+            <group>mysql</group>
+        </include>
+    </groups>
+    <source>
+        <include>
+            <directory>src</directory>
+        </include>
+    </source>
+    <php>
+        <env name="FURESCUE_ENV_FILE" value=".env.test" force="true"/>
+        <env name="APP_ENV" value="testing" force="true"/>
+        <env name="APP_TESTING" value="1" force="true"/>
+        <env name="CORS_ALLOWED_ORIGINS" value="http://127.0.0.1:8000,http://localhost:8080" force="true"/>
+    </php>
+</phpunit>

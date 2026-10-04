@@ -42,7 +42,7 @@ foreach ($kpiData as $k) {
         ? '<p class="kpi-card__trend kpi-card__trend--' . e((string) ($k['trendTone'] ?? 'neutral')) . '">' . e($trend) . '</p>'
         : '';
     $kpiTiles .= '
-  <article class="kpi-card" aria-label="' . e($aria) . '"' . $title . '>
+  <article class="kpi-card kpi-card--compact" aria-label="' . e($aria) . '"' . $title . '>
     <div class="kpi-card__icon kpi-card__icon--' . e((string) $k['tone']) . '"><i data-lucide="' . e((string) $k['icon']) . '"></i></div>
     <div class="kpi-card__body">
       <p class="kpi-card__label">' . e($label) . '</p>
@@ -73,7 +73,7 @@ $statusChartHtml = '
     </div>
   </div>';
 
-$kpiStripHtml = '<div class="kpi-grid">' . $kpiTiles . '</div><div class="kpi-donut" id="kpi-donut-card">' . $statusChartHtml . '</div>';
+$kpiStripHtml = '<div class="kpi-grid kpi-grid--compact">' . $kpiTiles . '</div><div class="kpi-donut" id="kpi-donut-card">' . $statusChartHtml . '</div>';
 
 $tabButtons = '';
 foreach ([

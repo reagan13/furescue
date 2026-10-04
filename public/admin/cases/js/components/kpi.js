@@ -74,7 +74,7 @@ export function KpiTile(k) {
 
 export function KpiStrip() {
   return `
-    ${KpiGrid({ items: buildKpis().map(toKpiCardProps) })}
+    ${KpiGrid({ items: buildKpis().map(toKpiCardProps), compact: true })}
     <div class="kpi-donut" id="kpi-donut-card">${StatusChart()}</div>`;
 }
 

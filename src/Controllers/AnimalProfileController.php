@@ -42,7 +42,7 @@ class AnimalProfileController extends AbstractController
         try {
             $url = $this->assets->store($file);
         } catch (\RuntimeException $e) {
-            Response::error('SERVER_ERROR', $e->getMessage(), 500);
+            Response::serverError($e);
             return;
         }
         $previous = (string) ($animal->model3dUrl() ?? '');
@@ -96,7 +96,7 @@ class AnimalProfileController extends AbstractController
             }
         } catch (\RuntimeException $e) {
             $this->assets->deleteOwnedList($urls);
-            Response::error('SERVER_ERROR', $e->getMessage(), 500);
+            Response::serverError($e);
             return;
         }
         $previous = AnimalAssetUpload::decodeUrlList($animal->photo360Set());

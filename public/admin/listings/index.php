@@ -19,7 +19,7 @@ $pdo = Database::connect();
 $uid = (string) $_SESSION['user']['id'];
 
 $stmt = $pdo->prepare(
-    "SELECT l.*, a.name AS animal_name, u.full_name AS poster_name
+    "SELECT l.*, a.name AS animal_name, a.species, u.full_name AS poster_name
      FROM adoption_listings l
      LEFT JOIN animals a ON a.id = l.animal_id
      LEFT JOIN users u ON u.id = l.posted_by

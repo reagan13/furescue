@@ -98,7 +98,7 @@ flowchart TB
   L --> ADM["Admin / City Vet"]
 
   RES --> RESA["Report · My reports · Browse · Apply · My listings · Learn · Messages · Account"]
-  REC --> RECA["My cases · Duty on/off · Accept/decline · Proof · Resolve · Learn · Messages · Account"]
+  REC --> RECA["My cases · Duty on/off · Accept/decline · Proof · Learn · Messages · Account"]
   ADM --> ADMA["Verify reports · Assign cases · Animals · Health · Listings · Applications · E-learning · Broadcast · Analytics"]
 ```
 
@@ -120,7 +120,8 @@ sequenceDiagram
   Admin->>Admin: Verify report (creates case)
   Admin->>Rescuer: Assign case (rescuer must be on duty)
   Rescuer->>Rescuer: Accept → in progress
-  Rescuer->>Admin: Proof photos + resolve
+  Rescuer->>Admin: Proof photos
+  Admin->>Admin: Resolve on /admin/cases/case-detail.php
   Admin->>Admin: Register animal + health (vax + vital)
   Admin->>Resident: Animal listed available
   Resident->>Admin: Apply to adopt
@@ -132,7 +133,7 @@ Walk this in the browser, in order:
 
 1. Resident → `/report/` → submit.
 2. Admin → `/admin/reports/` → Verify → `/admin/cases/` → Assign `rescuer@…`.
-3. Rescuer → `/cases/` → On duty → Accept → proof → Resolve.
+3. Rescuer → `/cases/` → On duty → Accept → upload proof. Admin resolves on `/admin/cases/case-detail.php`.
 4. Admin → `/admin/animals/` + `/admin/health-records/` → list for adoption.
 5. Resident → `/animals/` → Apply → `/adoptions/`.
 6. Admin → `/admin/applications/` → Approve → later Complete.
@@ -155,7 +156,7 @@ stateDiagram-v2
   open --> assigned: admin assigns on-duty rescuer
   assigned --> in_progress: rescuer accepts
   assigned --> open: rescuer declines
-  in_progress --> resolved: proof + resolve
+  in_progress --> resolved: admin resolves after proof
 ```
 
 ```mermaid

@@ -22,8 +22,8 @@ export function initListingsEvents() {
       }
       downloadCsv(
         datedCsvName("listings"),
-        ["id", "animal", "poster", "status", "posted"],
-        list.map((row) => [row.id, row.animal_name || "", row.poster_name || "", row.status, row.created_at || ""])
+        ["id", "animal", "species", "poster", "status", "posted"],
+        list.map((row) => [row.id, row.animal_name || "", row.species || "", row.poster_name || "", row.status, row.created_at || ""])
       );
       toast("CSV downloaded.", { type: "success" });
       return;

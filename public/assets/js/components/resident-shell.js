@@ -4,6 +4,7 @@ import { bootstrapPageAuth } from "/assets/js/lib/page-auth.js";
 import { setNavBadge } from "/assets/js/lib/swr.js";
 import { subscribeToNotifications } from "/assets/js/lib/notification-stream.js";
 import { initDropdownMenu } from "/shared/components/dropdown-menu/dropdown-menu.js";
+import { initFeedback } from "/assets/js/components/feedback.js";
 
 function initMenuToggle() {
   const sidebar = document.getElementById("rside");
@@ -103,6 +104,7 @@ export function initResidentShell() {
   initDate();
   initLogout();
   initDropdownMenu(document);
+  initFeedback();
   refreshNotificationBadge();
   notificationStream = subscribeToNotifications(applyStreamBadge);
 }

@@ -72,6 +72,8 @@ class ElearningApiTest extends ApiTestCase
         $module = $this->seedModule(['published_status' => 'published']);
         $data = $this->assertOk($this->get('/api/v1/elearning/modules/' . $module['id'], [], $this->actingAs($resident)));
         $this->assertSame($module['id'], $data['module']['id']);
+        $this->assertArrayNotHasKey('quiz_json', $data['module']);
+        $this->assertSame([], $data['module']['quiz']);
     }
 
     public function testModuleNotFound(): void
@@ -231,5 +233,41 @@ class ElearningApiTest extends ApiTestCase
         $resident = $this->seedResident();
         $data = $this->assertOk($this->get('/api/v1/elearning/progress', [], $this->actingAs($resident)));
         $this->assertIsArray($data['progress']);
+    }
+
+    public function testQuizPassCompletesModuleAndAwardsBadge(): void
+    {
+        $resident = $this->seedResident();
+        $module = $this->seedModule([
+            'quiz_json' => json_encode([
+                ['q' => 'When should you bait a TNR trap?', 'options' => ['At dusk', 'At noon'], 'a' => 0],
+            ], JSON_UNESCAPED_SLASHES),
+        ]);
+        $this->assertError($this->post('/api/v1/elearning/progress', [
+            'module_id' => $module['id'],
+            'status' => 'completed',
+        ], $this->actingAs($resident)), 'QUIZ_REQUIRED', 409);
+
+        $fail = $this->assertOk($this->post('/api/v1/elearning/quiz', [
+            'module_id' => $module['id'],
+            'answers' => [1],
+        ], $this->actingAs($resident)));
+        $this->assertFalse($fail['result']['passed']);
+        $this->assertSame('in_progress', $fail['progress']['status']);
+
+        $pass = $this->assertOk($this->post('/api/v1/elearning/quiz', [
+            'module_id' => $module['id'],
+            'answers' => [0],
+        ], $this->actingAs($resident)));
+        $this->assertTrue($pass['result']['passed']);
+        $this->assertSame('completed', $pass['progress']['status']);
+        $this->assertSame(1, (int) $pass['progress']['badge_earned']);
+
+        $keep = $this->assertOk($this->post('/api/v1/elearning/progress', [
+            'module_id' => $module['id'],
+            'status' => 'in_progress',
+            'read_pct' => 40,
+        ], $this->actingAs($resident)));
+        $this->assertSame('completed', $keep['progress']['status']);
     }
 }

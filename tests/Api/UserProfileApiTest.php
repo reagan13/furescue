@@ -73,6 +73,23 @@ class UserProfileApiTest extends ApiTestCase
         );
     }
 
+    public function testProfilePhotoStoreFailureStaysGeneric(): void
+    {
+        $resident = $this->seedResident();
+        $file = $this->pngFile();
+        unlink($file['tmp_name']);
+        $response = $this->postFile(
+            '/api/v1/users/' . $resident['id'] . '/profile-photo',
+            $file,
+            $this->actingAs($resident)
+        );
+        $this->assertError($response, 'SERVER_ERROR', 500);
+        $message = (string) ($response['body']['error']['message'] ?? '');
+        $this->assertSame('Something went wrong. Try again.', $message);
+        $this->assertStringNotContainsString('D:\\', $message);
+        $this->assertStringNotContainsString('.php:', $message);
+    }
+
     public function testResidentCanUploadOwnProfilePhoto(): void
     {
         $resident = $this->seedResident();

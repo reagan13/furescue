@@ -39,9 +39,11 @@ class AnalyticsController extends AbstractController
 
     public function exportOverview(Request $req): void
     {
+        $stats = $this->overviewStats();
         $rows = [];
-        foreach ($this->overviewStats() as $key => $value) {
-            $rows[] = [self::OVERVIEW_LABELS[$key] ?? $key, $value, date('Y-m-d')];
+        foreach (self::OVERVIEW_LABELS as $key => $label) {
+            $value = $stats[$key] ?? 0;
+            $rows[] = [$label, is_scalar($value) ? $value : 0, date('Y-m-d')];
         }
         $this->csv('furescue-overview-' . date('Y-m-d') . '.csv', ['Metric', 'Value', 'Date'], $rows);
     }
@@ -190,6 +192,12 @@ class AnalyticsController extends AbstractController
     private function csv(string $filename, array $header, array $rows): void
     {
         Response::$sent = true;
+        Response::$statusCode = 200;
+        Response::$headers = [
+            'Content-Type' => 'text/csv; charset=utf-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Cache-Control' => 'no-store',
+        ];
         if (!headers_sent()) {
             http_response_code(200);
             header('Content-Type: text/csv; charset=utf-8');
@@ -199,9 +207,13 @@ class AnalyticsController extends AbstractController
         }
         echo "\xEF\xBB\xBF";
         $out = fopen('php://output', 'w');
-        fputcsv($out, $header);
+        fputcsv($out, $header, ',', '"', '\\');
         foreach ($rows as $row) {
-            fputcsv($out, $row);
+            $cells = [];
+            foreach ($row as $cell) {
+                $cells[] = is_scalar($cell) || $cell === null ? (string) $cell : '';
+            }
+            fputcsv($out, $cells, ',', '"', '\\');
         }
         fclose($out);
     }

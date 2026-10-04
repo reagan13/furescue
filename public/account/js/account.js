@@ -2,6 +2,8 @@ import { createIcons, icons } from "lucide";
 import { hasPageSession, PORTAL_ROLES, requireAuth, apiFetch, redirectToLogin } from "/assets/js/lib/api.js";
 import { bootstrapPageAuth } from "/assets/js/lib/page-auth.js";
 import { initResidentShell } from "/assets/js/components/resident-shell.js";
+import { initShell } from "/assets/js/admin/app-shell.js";
+import { initDropdownMenu } from "/shared/components/dropdown-menu/dropdown-menu.js";
 import { toast } from "/shared/components/toast/toast.js";
 import { confirmDialog } from "/shared/components/dialog/dialog.js";
 import { initAccountPhoto, refreshPhotoInitials } from "/account/js/photo.js";
@@ -69,11 +71,31 @@ async function onSubmit(event, user) {
   }
 }
 
+function initAdminDate() {
+  const node = document.getElementById("admin-date");
+  if (!node) return;
+  node.textContent = new Date().toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function initAccountShell(user) {
+  if (user.role === "admin") {
+    initShell();
+    initDropdownMenu(document);
+    initAdminDate();
+    return;
+  }
+  initResidentShell();
+}
+
 function boot() {
   bootstrapPageAuth();
-  initResidentShell();
   const user = requireAuth(PORTAL_ROLES);
   if (!user) return;
+  initAccountShell(user);
   createIcons({ icons });
   initAccountPhoto(user);
   el("account-form")?.addEventListener("submit", (event) => onSubmit(event, user));

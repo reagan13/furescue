@@ -35,7 +35,9 @@ The old clipped-corner `.kpi-tile` pattern (diagonal cut, punch-hole circle, ser
 | Class | Role |
 |-------|------|
 | `.kpi-grid` | Responsive row of cards |
+| `.kpi-grid--compact` | Tighter gap and `minmax(10rem)` tracks |
 | `.kpi-card` | White card surface |
+| `.kpi-card--compact` | Smaller padding, icon well, and value |
 | `.kpi-card--interactive` | Clickable card (`<a>` or `<button>`) with hover + `:focus-visible` |
 | `.kpi-card__icon` | 1:1 pastel rounded-square well |
 | `.kpi-card__icon--jungle` | Green well — totals / reports |
@@ -114,3 +116,5 @@ Mobile-first, no fixed widths:
 - **1024px+:** `auto-fit` / `minmax` so four cards share one row on desktop (1440px)
 
 Page padding comes from `.admin-main`. Cards use fluid padding (`clamp(1rem, 2vw, 1.5rem)`) and `minmax(0, 1fr)` tracks.
+
+Compact variant (Cases, Listings, Applications): `.kpi-card--compact` / `.kpi-grid--compact`, or `compact: true` on `KpiCard` / `KpiGrid`. Verify 375 / 768 / 1440 — cards wrap, no horizontal overflow.

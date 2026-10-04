@@ -20,7 +20,7 @@ if ($initials === '') {
     $initials = '?';
 }
 ?>
-    <div class="mx-auto w-full max-w-4xl min-w-0">
+    <div class="account-page mx-auto w-full max-w-4xl min-w-0">
       <div class="rpage-head">
         <div class="min-w-0">
           <h1 class="rpage-title">Account</h1>

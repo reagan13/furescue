@@ -137,10 +137,31 @@ class AuthApiTest extends ApiTestCase
             'email' => 'pending-login@test.local',
             'account_status' => 'pending',
         ]);
-        $this->assertError($this->post('/api/v1/auth/login', [
+        $response = $this->post('/api/v1/auth/login', [
             'email' => $user['email'],
             'password' => self::PASSWORD,
-        ]), 'ACCOUNT_PENDING', 403);
+        ]);
+        $this->assertError($response, 'ACCOUNT_PENDING', 403);
+        $message = (string) ($response['body']['error']['message'] ?? '');
+        $this->assertSame('This account is not active.', $message);
+        $this->assertStringNotContainsString('status:', $message);
+    }
+
+    public function testLoginRejectedAccountDoesNotLeakStatus(): void
+    {
+        $user = $this->seedRescuer([
+            'email' => 'rejected-login@test.local',
+            'account_status' => 'rejected',
+        ]);
+        $response = $this->post('/api/v1/auth/login', [
+            'email' => $user['email'],
+            'password' => self::PASSWORD,
+        ]);
+        $this->assertError($response, 'ACCOUNT_PENDING', 403);
+        $message = (string) ($response['body']['error']['message'] ?? '');
+        $this->assertSame('This account is not active.', $message);
+        $this->assertStringNotContainsString('status:', $message);
+        $this->assertStringNotContainsString('rejected', $message);
     }
 
     public function testLoginEmptyBodyFails(): void

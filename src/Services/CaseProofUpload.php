@@ -13,10 +13,14 @@ class CaseProofUpload
     private const FILE_KEYS = ['files', 'files[]', 'photos', 'proof', 'file'];
 
     private string $publicRoot;
+    private bool $allowLocalCopy;
 
-    public function __construct(?string $publicRoot = null)
+    public function __construct(?string $publicRoot = null, ?bool $allowLocalCopy = null)
     {
-        $this->publicRoot = $publicRoot ?? dirname(__DIR__, 2) . '/public';
+        $configured = Database::env('UPLOAD_PUBLIC_ROOT', '');
+        $this->publicRoot = $publicRoot
+            ?? ($configured !== '' && $configured !== null ? (string) $configured : dirname(__DIR__, 2) . '/public');
+        $this->allowLocalCopy = $allowLocalCopy ?? ((string) Database::env('APP_TESTING', '') === '1');
     }
 
     public static function collect(array $filesGlobal): array
@@ -33,7 +37,12 @@ class CaseProofUpload
 
     public function store(array $file): string
     {
-        $error = AnimalAssetUpload::validate($file, AnimalAssetUpload::photoRules(), self::MAX_BYTES);
+        $error = AnimalAssetUpload::validate(
+            $file,
+            AnimalAssetUpload::photoRules(),
+            self::MAX_BYTES,
+            !$this->allowLocalCopy
+        );
         if ($error !== null) {
             throw new \InvalidArgumentException($error);
         }
@@ -47,7 +56,12 @@ class CaseProofUpload
 
         $stored = Database::uuidV4() . '.' . $ext;
         $dest = $dir . DIRECTORY_SEPARATOR . $stored;
-        if (!move_uploaded_file((string) $file['tmp_name'], $dest)) {
+        $tmp = (string) ($file['tmp_name'] ?? '');
+        $moved = $tmp !== '' && is_uploaded_file($tmp) && move_uploaded_file($tmp, $dest);
+        if (!$moved && $this->allowLocalCopy && $tmp !== '' && is_file($tmp) && copy($tmp, $dest)) {
+            $moved = true;
+        }
+        if (!$moved) {
             throw new \RuntimeException("Could not save '{$file['name']}'.");
         }
 

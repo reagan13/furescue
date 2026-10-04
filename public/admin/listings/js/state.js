@@ -17,6 +17,7 @@ function mergeNames(items) {
     return {
       ...row,
       animal_name: row.animal_name || prior.animal_name || "",
+      species: row.species || prior.species || "",
       poster_name: row.poster_name || prior.poster_name || "",
     };
   });

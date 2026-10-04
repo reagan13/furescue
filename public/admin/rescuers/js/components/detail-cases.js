@@ -111,15 +111,13 @@ export function openRescuerModal() {
   overlay.className = "dialog-overlay";
   overlay.innerHTML = `
     <div class="dialog dialog--wide" role="dialog" aria-modal="true" aria-labelledby="rescuer-modal-title">
-      <div class="dialog-head">
-        <div class="dialog-title-wrap">
-          ${rescuerAvatar(r.profile_photo_url, r.full_name)}
-          <div class="dialog-title-block">
-            <h3 class="dialog-title" id="rescuer-modal-title">${esc(r.full_name || "Rescuer")}</h3>
-            <div class="dialog-sub">${esc(shortId(r.id))}</div>
-          </div>
-        </div>
+      <div class="dialog-head rescuer-modal-head">
         <button type="button" class="dialog-x" aria-label="Close"><i data-lucide="x"></i></button>
+        <div class="rescuer-modal-identity">
+          ${rescuerAvatar(r.profile_photo_url, r.full_name)}
+          <h3 class="dialog-title" id="rescuer-modal-title">${esc(r.full_name || "Rescuer")}</h3>
+          <div class="dialog-sub">${esc(shortId(r.id))}</div>
+        </div>
       </div>
       <div class="dialog-body rescuer-modal-body">
         ${RescuerMeta(r)}

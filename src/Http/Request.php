@@ -53,6 +53,13 @@ class Request
         if ($this->method === 'GET' || $this->method === 'DELETE') {
             return [];
         }
+        $contentType = strtolower((string) ($this->headers['content-type'] ?? ''));
+        if (
+            str_contains($contentType, 'multipart/form-data')
+            || str_contains($contentType, 'application/x-www-form-urlencoded')
+        ) {
+            return is_array($_POST) ? $_POST : [];
+        }
         $raw = (string) (file_get_contents('php://input') ?: '');
         if ($raw === '') {
             return [];
@@ -63,6 +70,45 @@ class Request
             return [];
         }
         return $decoded;
+    }
+
+    /**
+     * Normalize a $_FILES entry (`photos` or `photos[]`) into a list of file arrays.
+     *
+     * @return list<array{name:string,type:string,tmp_name:string,error:int,size:int}>
+     */
+    public function files(string $key): array
+    {
+        $entry = $_FILES[$key] ?? null;
+        if (!$entry || !is_array($entry) || !isset($entry['name'])) {
+            return [];
+        }
+        if (!is_array($entry['name'])) {
+            if (($entry['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+                return [];
+            }
+            return [[
+                'name' => (string) ($entry['name'] ?? ''),
+                'type' => (string) ($entry['type'] ?? ''),
+                'tmp_name' => (string) ($entry['tmp_name'] ?? ''),
+                'error' => (int) ($entry['error'] ?? UPLOAD_ERR_NO_FILE),
+                'size' => (int) ($entry['size'] ?? 0),
+            ]];
+        }
+        $out = [];
+        foreach (array_keys($entry['name']) as $i) {
+            if (($entry['error'][$i] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+                continue;
+            }
+            $out[] = [
+                'name' => (string) ($entry['name'][$i] ?? ''),
+                'type' => (string) ($entry['type'][$i] ?? ''),
+                'tmp_name' => (string) ($entry['tmp_name'][$i] ?? ''),
+                'error' => (int) ($entry['error'][$i] ?? UPLOAD_ERR_NO_FILE),
+                'size' => (int) ($entry['size'][$i] ?? 0),
+            ];
+        }
+        return $out;
     }
 
     public function header(string $name, $default = null)

@@ -21,7 +21,13 @@ if (!function_exists('kpi_card_html')) {
         $interactive = !empty($k['interactive']);
         $attrs = (string) ($k['attrs'] ?? '');
         $isInteractive = $href !== '' || $interactive;
-        $cls = trim('kpi-card' . ($isInteractive ? ' kpi-card--interactive' : '') . ($className !== '' ? ' ' . $className : ''));
+        $compact = !empty($k['compact']);
+        $cls = trim(
+            'kpi-card'
+            . ($compact ? ' kpi-card--compact' : '')
+            . ($isInteractive ? ' kpi-card--interactive' : '')
+            . ($className !== '' ? ' ' . $className : '')
+        );
         $extra = $attrs !== '' ? ' ' . $attrs : '';
         $trendHtml = $trend !== ''
             ? '<p class="kpi-card__trend kpi-card__trend--' . $esc((string) ($k['trendTone'] ?? 'neutral')) . '">' . $esc($trend) . '</p>'

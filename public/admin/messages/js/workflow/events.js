@@ -1,5 +1,7 @@
 import { openThread, sendCurrent, closeThread } from "./actions.js";
 import { openComposeDialog } from "../components/compose.js";
+import { renderList } from "../components/list.js";
+import { state } from "../state.js";
 
 let bound = false;
 
@@ -23,6 +25,13 @@ export function initMessagesEvents() {
     if (e.target.closest("#amsg-back")) {
       closeThread();
     }
+  });
+
+  app.addEventListener("input", (e) => {
+    const search = e.target.closest("#amsg-search");
+    if (!search) return;
+    state.query = search.value;
+    renderList();
   });
 
   app.addEventListener("submit", (e) => {

@@ -7,6 +7,7 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const el = (id) => document.getElementById(id);
 
 let selectedFiles = [];
+let onFilesChange = () => {};
 
 export function getSelectedFiles() {
   return selectedFiles;
@@ -35,6 +36,7 @@ export function renderSelectedFiles() {
     remove.addEventListener("click", () => {
       selectedFiles.splice(i, 1);
       renderSelectedFiles();
+      onFilesChange();
     });
     li.append(name, size, remove);
     list.appendChild(li);
@@ -42,9 +44,12 @@ export function renderSelectedFiles() {
   createIcons({ icons });
 }
 
-export function initPhotoInput() {
+export function initPhotoInput(options = {}) {
   const input = el("report-photos");
   if (!input) return;
+  if (typeof options.onChange === "function") {
+    onFilesChange = options.onChange;
+  }
   input.addEventListener("change", () => {
     for (const file of Array.from(input.files || [])) {
       if (selectedFiles.length >= MAX_FILES) {
@@ -60,5 +65,6 @@ export function initPhotoInput() {
     }
     input.value = "";
     renderSelectedFiles();
+    onFilesChange();
   });
 }

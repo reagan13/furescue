@@ -18,3 +18,20 @@
   gap: 12px;
   padding: 24px 16px;
 }
+
+.app-drawer-animal {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  margin-bottom: 12px;
+}
+.app-drawer-animal-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+.app-drawer-animal-meta .dialog-info-value {
+  overflow-wrap: anywhere;
+}

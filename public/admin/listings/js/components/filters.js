@@ -29,6 +29,6 @@ export function FilterTabs() {
 
 export function FilterToolbar() {
   return Toolbar({
-    children: Search({ id: "listing-search", placeholder: "Search animal, poster…", value: state.query }),
+    children: Search({ id: "listing-search", placeholder: "Search animal, species, poster…", value: state.query }),
   });
 }

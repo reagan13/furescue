@@ -21,6 +21,10 @@ declare(strict_types=1);
  */
 
 require __DIR__ . '/../components/admin-nav.php';
+if (!function_exists('shared_path')) {
+    require_once __DIR__ . '/../path.php';
+}
+require_once shared_path('icons/icons.php');
 
 $adminUser = $adminUser ?? [];
 $activeNav = $activeNav ?? '';
@@ -49,7 +53,7 @@ $adminNavItems = static function (array $items) use ($esc, $adminBadgeMap, $acti
         $aria = $isActive ? ' aria-current="page"' : '';
         $out .= '
     <a href="' . $esc($item['href'] ?? '#') . '" class="sidebar-link' . $tone . '"' . $aria . '>
-      <i data-lucide="' . $esc($item['icon'] ?? '') . '"></i> <span>' . $esc($item['label'] ?? '') . '</span>
+      ' . lucide_icon((string) ($item['icon'] ?? '')) . ' <span>' . $esc($item['label'] ?? '') . '</span>
       ' . $badge . '
     </a>';
     }
@@ -74,19 +78,27 @@ $adminMenuItem = static function (string $icon, string $label, string $href = '#
     $cls = $danger ? $adminMenuItemBase . ' ' . $adminMenuDanger : $adminMenuItemBase;
     return '
   <a href="' . $esc($href) . '" class="' . $cls . '">
-    <i data-lucide="' . $esc($icon) . '" class="h-4 w-4"></i>
+    ' . lucide_icon($icon, 'h-4 w-4') . '
     <span>' . $esc($label) . '</span>
   </a>';
 };
 
-$adminAvatarSrc = trim((string) ($adminUser['profile_photo_url'] ?? '')) !== ''
-    ? (string) $adminUser['profile_photo_url']
-    : 'https://i.pravatar.cc/64?img=33';
+$adminAvatarSrc = trim((string) ($adminUser['profile_photo_url'] ?? ''));
+$adminHasPhoto = $adminAvatarSrc !== '';
+$adminInitials = '';
+foreach (array_slice(preg_split('/\s+/u', trim((string) ($adminUser['full_name'] ?? ''))) ?: [], 0, 2) as $word) {
+    if ($word === '') {
+        continue;
+    }
+    $adminInitials .= mb_strtoupper(mb_substr($word, 0, 1, 'UTF-8'), 'UTF-8');
+}
+$adminInitials = $adminInitials !== '' ? $adminInitials : '?';
 
 $adminProfileMenu = '
   <div id="profile-menu" data-dropdown class="relative">
     <button type="button" data-dropdown-trigger class="topbar-user" aria-haspopup="menu" aria-expanded="false" aria-label="Admin menu">
-      <img src="' . $esc($adminAvatarSrc) . '" alt="Admin avatar">
+      <img src="' . $esc($adminAvatarSrc) . '" alt="" data-shell-avatar' . ($adminHasPhoto ? '' : ' hidden') . '>
+      <span class="topbar-user-fallback" data-shell-avatar-fallback' . ($adminHasPhoto ? ' hidden' : '') . '>' . $esc($adminInitials) . '</span>
     </button>
     <div data-dropdown-content role="menu" class="absolute top-full z-50 mt-1 hidden min-w-56 overflow-hidden rounded-md border border-input bg-card p-1 text-card-foreground shadow-md right-0">'
         . $adminMenuLabel('Insights')
@@ -105,11 +117,13 @@ $adminProfileMenu = '
 <div class="admin-shell">
   <aside id="sidebar" class="sidebar">
     <div class="sidebar-head">
-      <div class="sidebar-logo"><i data-lucide="paw-print"></i></div>
-      <div>
-        <div class="sidebar-brand">FurEscue</div>
-        <div class="sidebar-tag">Admin Console</div>
-      </div>
+      <a href="/admin/" class="sidebar-brand-link">
+        <div class="sidebar-logo"><?= lucide_icon('paw-print') ?></div>
+        <div>
+          <div class="sidebar-brand">FurEscue</div>
+          <div class="sidebar-tag">Admin Console</div>
+        </div>
+      </a>
     </div>
 
     <nav class="sidebar-nav">
@@ -120,12 +134,12 @@ $adminProfileMenu = '
   <div class="admin-body">
     <header class="topbar">
       <button id="menu-toggle" class="topbar-menu" aria-label="Open menu">
-        <i data-lucide="menu"></i>
+        <?= lucide_icon('menu') ?>
       </button>
 
       <div class="topbar-actions">
-        <span class="topbar-meta"><i data-lucide="calendar"></i> <span id="admin-date"></span> &middot; City of Mati</span>
-        <a href="/admin/notifications/" class="topbar-bell" aria-label="Notifications"><i data-lucide="bell"></i></a>
+        <span class="topbar-meta"><?= lucide_icon('calendar') ?> <span id="admin-date"></span> &middot; City of Mati</span>
+        <a href="/admin/notifications/" class="topbar-bell" aria-label="Notifications"><?= lucide_icon('bell') ?></a>
         <span class="topbar-divider"></span>
         <?= $adminProfileMenu ?>
       </div>

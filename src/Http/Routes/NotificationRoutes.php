@@ -2,6 +2,7 @@
 
 namespace App\Http\Routes;
 
+use App\Controllers\FeedbackController;
 use App\Controllers\NotificationController;
 use App\Http\Request;
 use App\Http\Response;
@@ -25,6 +26,7 @@ class NotificationRoutes
             return $authMw($r);
         };
 
+        $router->add('POST', '/api/v1/feedback', fn(Request $r) => (new FeedbackController($pdo))->create($r), [$authMw]);
         $router->add('GET', '/api/v1/notifications', fn(Request $r) => (new NotificationController($pdo))->index($r), [$authMw]);
         $router->add('GET', '/api/v1/notifications/stream', fn(Request $r) => (new NotificationController($pdo))->stream($r), [$eventSourceAuth]);
         $router->add('PATCH', '/api/v1/notifications/{id}/read', fn(Request $r) => (new NotificationController($pdo))->markRead($r), [$authMw]);

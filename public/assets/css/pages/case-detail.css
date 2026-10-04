@@ -175,3 +175,36 @@
 .cd-rescuer-meta .badge {
   margin: 0;
 }
+
+.cd-upload {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+  min-width: 0;
+}
+.cd-upload-hint {
+  margin: 0;
+  font-size: 0.75rem;
+  color: hsl(var(--muted-foreground));
+}
+.cd-upload-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.cd-upload-row .input {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+.cd-upload-names,
+.cd-upload-error {
+  margin: 0;
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+}
+.cd-upload-error {
+  color: hsl(var(--destructive));
+}

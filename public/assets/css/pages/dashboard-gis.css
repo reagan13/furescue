@@ -6,6 +6,9 @@
   flex-direction: column;
   gap: 16px;
   min-width: 0;
+  position: relative;
+  z-index: 0;
+  isolation: isolate;
 }
 
 @media (min-width: 1024px) {
@@ -234,8 +237,11 @@
 
 .dash-map-wrap {
   position: relative;
+  z-index: 0;
   flex: 1;
   min-height: 280px;
+  overflow: hidden;
+  isolation: isolate;
 }
 
 .dash .map-canvas--leaflet {
@@ -262,17 +268,31 @@
   }
 }
 
+.dash-map-wrap .leaflet-container {
+  z-index: 0;
+}
+
+.dash-map-wrap .leaflet-control-container {
+  z-index: 1;
+}
+
+.dash-map-wrap .leaflet-control-attribution {
+  margin: 0 8px 8px 0;
+  background: hsl(var(--card) / 0.92);
+}
+
 .dash-legend {
   position: absolute;
-  right: 12px;
+  left: 12px;
   bottom: 12px;
-  z-index: 400;
-  max-width: min(240px, calc(100% - 24px));
-  background: hsl(var(--card) / 0.94);
+  z-index: 2;
+  max-width: min(240px, calc(100% - 72px));
+  background: hsl(var(--card));
   border: 1px solid hsl(var(--border));
   border-radius: 10px;
   padding: 10px 12px;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
+  pointer-events: none;
 }
 
 .dash-legend-title {

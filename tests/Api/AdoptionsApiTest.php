@@ -309,4 +309,27 @@ class AdoptionsApiTest extends ApiTestCase
         $this->assertOk($response);
         $this->assertSame(2, $response['body']['meta']['total']);
     }
+
+    public function testAdminListIncludesSpeciesAndPhotos(): void
+    {
+        $admin = $this->seedAdmin();
+        $animal = $this->seedAnimal([
+            'name' => 'Ace',
+            'species' => 'dog',
+            'breed_type' => 'aspin',
+            'adoption_status' => 'available',
+        ]);
+        $this->pdo->prepare('UPDATE animals SET photo_urls = ? WHERE id = ?')->execute([
+            json_encode(['/uploads/demo/animals/ace.svg']),
+            $animal['id'],
+        ]);
+        $this->seedAdoption(['animal_id' => $animal['id']]);
+        $response = $this->get('/api/v1/adoptions', [], $this->actingAs($admin));
+        $items = $this->assertOk($response);
+        $this->assertNotEmpty($items);
+        $this->assertSame('dog', $items[0]['species'] ?? null);
+        $this->assertSame('Ace', $items[0]['animal_name'] ?? null);
+        $this->assertArrayHasKey('photo_urls', $items[0]);
+        $this->assertStringContainsString('ace.svg', (string) $items[0]['photo_urls']);
+    }
 }

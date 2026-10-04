@@ -20,6 +20,25 @@
   min-height: 0;
 }
 
+.admin-main:has(.amsg-shell) .page-head-actions {
+  flex: 1 1 16rem;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.admin-main:has(.amsg-shell) .amsg-search {
+  flex: 1 1 12rem;
+  min-width: 0;
+  max-width: 22rem;
+}
+
+@media (max-width: 767.98px) {
+  .admin-main:has(.amsg-shell) .amsg-search {
+    flex-basis: 100%;
+    max-width: 100%;
+  }
+}
+
 .amsg-panel {
   flex: 1 1 auto;
   display: flex;

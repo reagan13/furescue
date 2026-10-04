@@ -196,4 +196,18 @@ class AnalyticsHealthApiTest extends ApiTestCase
     {
         $this->assertError($this->get('/api/v1/health/activity'), 'UNAUTHENTICATED', 401);
     }
+
+    public function testAdminCanExportOverviewCsv(): void
+    {
+        $admin = $this->seedAdmin();
+        $this->seedReport();
+        $response = $this->get('/api/v1/analytics/overview/export', [], $this->actingAs($admin));
+        $this->assertSame(200, $response['status'], $response['raw'] ?: 'empty body');
+        $this->assertSame('text/csv; charset=utf-8', $response['headers']['Content-Type'] ?? null);
+        $this->assertStringContainsString('attachment; filename="', $response['headers']['Content-Disposition'] ?? '');
+        $this->assertStringContainsString('Metric,Value,Date', $response['raw']);
+        $this->assertStringContainsString('Total reports', $response['raw']);
+        $this->assertStringNotContainsString('reports_monthly', $response['raw']);
+        $this->assertStringNotContainsString('Array', $response['raw']);
+    }
 }

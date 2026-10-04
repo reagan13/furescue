@@ -277,6 +277,25 @@ class UsersApiTest extends ApiTestCase
         );
     }
 
+    public function testMeIncludesDutyStatusForRescuer(): void
+    {
+        $rescuer = $this->seedRescuer();
+        $this->assertOk($this->patch(
+            '/api/v1/rescuers/' . $rescuer['id'] . '/duty',
+            ['status' => 'on_duty'],
+            $this->actingAs($rescuer)
+        ));
+        $data = $this->assertOk($this->get('/api/v1/users/me', [], $this->actingAs($rescuer)));
+        $this->assertSame('on_duty', $data['user']['duty_status']);
+    }
+
+    public function testMeOmitsDutyStatusForResident(): void
+    {
+        $resident = $this->seedResident();
+        $data = $this->assertOk($this->get('/api/v1/users/me', [], $this->actingAs($resident)));
+        $this->assertArrayNotHasKey('duty_status', $data['user']);
+    }
+
     public function testRescuerCanToggleOwnDuty(): void
     {
         $rescuer = $this->seedRescuer();
@@ -302,11 +321,15 @@ class UsersApiTest extends ApiTestCase
     public function testPendingRescuerCannotToggleDuty(): void
     {
         $pending = $this->seedRescuer(['account_status' => 'pending']);
-        $this->assertError($this->patch(
+        $response = $this->patch(
             '/api/v1/rescuers/' . $pending['id'] . '/duty',
             ['status' => 'on_duty'],
             $this->actingAs($pending)
-        ), 'ACCOUNT_PENDING', 403);
+        );
+        $this->assertError($response, 'ACCOUNT_PENDING', 403);
+        $message = (string) ($response['body']['error']['message'] ?? '');
+        $this->assertSame('This account is not active.', $message);
+        $this->assertStringNotContainsString('status:', $message);
     }
 
     public function testDutyRejectsEmptyBody(): void

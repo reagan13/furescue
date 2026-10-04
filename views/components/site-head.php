@@ -36,6 +36,7 @@ $importMapExtras = $importMapExtras ?? [];
 <?php endif; ?>
 
     <link rel="stylesheet" href="/assets/css/style.css" />
+    <link rel="modulepreload" href="/assets/js/vendor/lucide.js" />
 <?php foreach ($pageCss as $pageCssHref): ?>
     <link rel="stylesheet" href="<?= htmlspecialchars($pageCssHref, ENT_QUOTES, 'UTF-8') ?>" />
 <?php endforeach; ?>

@@ -5,24 +5,14 @@ import { initResidentShell } from "/assets/js/components/resident-shell.js";
 import { esc } from "/assets/js/lib/format.js";
 import { openModelViewer, open360Viewer } from "./3d-viewer.js";
 import { openApplyModal } from "./apply-modal.js";
+import { parseUrls } from "./photos.js";
 
 const el = (id) => document.getElementById(id);
 const state = window.__PAGE_STATE__ || {};
+const backHref = state.backHref || "/animals/";
+const backLabel = state.backLabel || "Back to gallery";
 let animal = null;
 let applied = false;
-
-function parseUrls(value) {
-  if (!value) return [];
-  let parsed = value;
-  if (typeof parsed === "string") {
-    try {
-      parsed = JSON.parse(parsed);
-    } catch {
-      return [];
-    }
-  }
-  return Array.isArray(parsed) ? parsed.filter((u) => typeof u === "string" && u.trim() !== "") : [];
-}
 
 function label(value) {
   const raw = String(value || "").trim();
@@ -272,7 +262,7 @@ function boot() {
         <i data-lucide="cat"></i>
         <p class="rempty-title">Profile unavailable</p>
         <p class="rempty-text">${esc(err.message || "This animal could not be loaded.")}</p>
-        <a href="/animals/" class="rbtn rbtn--ghost rbtn--sm"><i data-lucide="arrow-left"></i><span>Back to gallery</span></a>
+        <a href="${esc(backHref)}" class="rbtn rbtn--ghost rbtn--sm"><i data-lucide="arrow-left"></i><span>${esc(backLabel)}</span></a>
       </div>`;
       createIcons({ icons });
     });

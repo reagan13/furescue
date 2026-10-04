@@ -240,6 +240,7 @@ class CaseControllerTest extends TestCase
             'id' => $reportId,
             'resident_id' => $residentId,
             'animal_description' => 'Injured dog',
+            'photo_urls' => json_encode(['/uploads/report.jpg']),
             'latitude' => 6.9554,
             'longitude' => 126.2131,
             'content_hash' => DedupService::contentHash('Injured dog', 6.9554, 126.2131),

@@ -20,5 +20,6 @@ class ElearningRoutes
         $router->add('PATCH', '/api/v1/elearning/modules/{id}', fn(Request $r) => (new ElearningController($pdo))->updateModule($r), [$authMw, new PermissionMiddleware('elearning.write')]);
         $router->add('GET', '/api/v1/elearning/progress', fn(Request $r) => (new ElearningController($pdo))->progress($r), [$authMw]);
         $router->add('POST', '/api/v1/elearning/progress', fn(Request $r) => (new ElearningController($pdo))->upsertProgress($r), [$authMw]);
+        $router->add('POST', '/api/v1/elearning/quiz', fn(Request $r) => (new ElearningController($pdo))->submitQuiz($r), [$authMw]);
     }
 }

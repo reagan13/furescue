@@ -56,7 +56,7 @@ export function ApplicationsPage(user, { loading = false } = {}) {
     notifications: 0,
     badges: { applications: pending },
     activeNav: "applications",
-    children: [PageHead(), `<div id="application-kpis" class="kpi-grid">${kpis}</div>`, ApplicationsPanel()].join(""),
+    children: [PageHead(), `<div id="application-kpis" class="kpi-grid kpi-grid--compact">${kpis}</div>`, ApplicationsPanel()].join(""),
   });
 }
 

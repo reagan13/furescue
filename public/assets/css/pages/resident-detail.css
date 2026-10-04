@@ -1,5 +1,11 @@
 /* Resident detail / gallery / timeline from input.css. */
 
+.resident-shell .rdetail-back {
+  display: block;
+  margin: 0;
+  padding: 0 0 2rem;
+}
+
 /* --- Detail layout --- */
 .resident-shell .rdetail-grid {
   display: grid;
@@ -23,6 +29,9 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+.resident-shell .rgallery-main img[src$=".svg"] {
+  object-fit: contain;
 }
 .resident-shell .rgallery-thumbs {
   display: flex;
@@ -49,6 +58,9 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+.resident-shell .rgallery-thumb img[src$=".svg"] {
+  object-fit: contain;
 }
 .resident-shell .rspec-list {
   margin: 0;

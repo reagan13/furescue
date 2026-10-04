@@ -9,7 +9,8 @@
     "build:vendor": "node scripts/build-vendor.mjs",
     "build:lucide": "node scripts/build-lucide.mjs",
     "watch": "tailwindcss -i ./public/assets/css/input.css -o ./public/assets/css/style.css --watch",
-    "dev": "tailwindcss -i ./public/assets/css/input.css -o ./public/assets/css/style.css --watch"
+    "dev": "tailwindcss -i ./public/assets/css/input.css -o ./public/assets/css/style.css --watch",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",
@@ -20,6 +21,7 @@
     "autoprefixer": "^10.4.20",
     "lucide": "0.469.0",
     "postcss": "^8.4.49",
+    "@playwright/test": "^1.55.0",
     "tailwindcss": "^3.4.17"
   }
 }

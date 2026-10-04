@@ -39,6 +39,10 @@ select.input {
   resize: vertical;
 }
 
+.input--area-lg {
+  min-height: 10rem;
+}
+
 /* Leading-icon field (forms). Search chrome is in search/search.css. */
 .input-icon {
   display: flex;

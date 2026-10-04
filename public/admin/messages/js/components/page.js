@@ -1,6 +1,8 @@
 import { AppShell } from "/assets/js/admin/app-shell.js";
 import { Button } from "/shared/components/button/button.js";
+import { Search } from "/shared/components/search/search.js";
 import { createIcons, icons } from "lucide";
+import { state } from "../state.js";
 import { ThreadList, renderList } from "./list.js";
 import { ThreadEmpty, ThreadHead, renderPane, syncInboxLayout } from "./pane.js";
 import { Composer } from "./composer.js";
@@ -14,6 +16,7 @@ function PageHead() {
       <p class="page-sub">Staff inbox for reports, cases, and adoption applications.</p>
     </div>
     <div class="page-head-actions">
+      ${Search({ id: "amsg-search", placeholder: "Search name, message…", value: state.query, className: "amsg-search", attrs: 'aria-label="Search conversations"' })}
       ${Button({ text: "Start conversation", variant: "default", icon: "plus", attrs: 'data-action="compose" id="amsg-compose"' })}
     </div>
   </div>`;

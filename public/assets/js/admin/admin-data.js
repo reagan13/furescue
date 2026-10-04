@@ -188,6 +188,12 @@ export const updateCaseStatus = (caseId, status) =>
 export const resolveCase = (caseId) =>
   post(`/cases/${caseId}/resolve`);
 
+export const uploadReportMedia = (id, formData) =>
+  apiUpload(`/reports/${encodeURIComponent(id)}/media`, formData);
+
+export const uploadCaseProof = (id, formData) =>
+  apiUpload(`/cases/${encodeURIComponent(id)}/proof`, formData);
+
 export const fetchCaseActivity = (caseId) =>
   raw(`/cases/${caseId}/activity`).then((d) => (d && d.activity) || []);
 

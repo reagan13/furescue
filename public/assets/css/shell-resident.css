@@ -308,11 +308,36 @@
   color: inherit;
   font: inherit;
 }
-.rtop-user img {
+.rtop-user img,
+.rtop-user-fallback {
   width: 32px;
   height: 32px;
-  object-fit: cover;
   border-radius: 999px;
   border: 2px solid hsl(var(--border));
   display: block;
+}
+.rtop-user img {
+  object-fit: cover;
+}
+.rtop-user-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.12);
+}
+.rtop-user img[hidden],
+.rtop-user-fallback[hidden] {
+  display: none;
+}
+
+.rfeedback-bar {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid hsl(var(--border));
+  display: flex;
+  justify-content: center;
 }

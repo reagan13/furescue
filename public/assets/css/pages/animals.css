@@ -185,6 +185,21 @@
   height: 100%;
   object-fit: cover;
 }
+.animal-thumb--sm {
+  width: 4.5rem;
+  height: 4.5rem;
+  min-height: 0;
+  aspect-ratio: 1;
+  flex-shrink: 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.animal-thumb--sm .animal-thumb-img {
+  object-fit: contain;
+}
+.animal-thumb--sm .animal-thumb-initial {
+  font-size: 1.25rem;
+}
 .animal-card-new {
   position: absolute;
   top: 8px;

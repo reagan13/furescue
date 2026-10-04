@@ -1,7 +1,7 @@
 /* Resident modal / form from input.css. */
 
 /* --- Modal dialog --- */
-.resident-shell .rmodal-overlay {
+:is(.resident-shell, .account-page) .rmodal-overlay {
   position: fixed;
   inset: 0;
   z-index: 90;
@@ -12,12 +12,12 @@
   padding: 0;
 }
 @media (min-width: 640px) {
-  .resident-shell .rmodal-overlay {
+  :is(.resident-shell, .account-page) .rmodal-overlay {
     align-items: center;
     padding: 24px;
   }
 }
-.resident-shell .rmodal {
+:is(.resident-shell, .account-page) .rmodal {
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -29,21 +29,21 @@
   box-shadow: var(--shadow-md);
 }
 @media (min-width: 640px) {
-  .resident-shell .rmodal {
+  :is(.resident-shell, .account-page) .rmodal {
     border-radius: 1rem;
   }
 }
-.resident-shell .rmodal--wide {
+:is(.resident-shell, .account-page) .rmodal--wide {
   max-width: 780px;
 }
-.resident-shell .rmodal-head {
+:is(.resident-shell, .account-page) .rmodal-head {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 14px 18px;
   border-bottom: 1px solid hsl(var(--border));
 }
-.resident-shell .rmodal-title {
+:is(.resident-shell, .account-page) .rmodal-title {
   margin: 0;
   font-family: var(--font-display);
   font-size: 1.1rem;
@@ -51,7 +51,7 @@
   min-width: 0;
   overflow-wrap: anywhere;
 }
-.resident-shell .rmodal-x {
+:is(.resident-shell, .account-page) .rmodal-x {
   margin-left: auto;
   display: inline-flex;
   align-items: center;
@@ -65,18 +65,18 @@
   cursor: pointer;
   transition: background-color 0.15s ease, color 0.15s ease;
 }
-.resident-shell .rmodal-x:hover {
+:is(.resident-shell, .account-page) .rmodal-x:hover {
   background: hsl(var(--surface-soft));
   color: hsl(var(--foreground));
 }
-.resident-shell .rmodal-body {
+:is(.resident-shell, .account-page) .rmodal-body {
   padding: 18px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
-.resident-shell .rmodal-foot {
+:is(.resident-shell, .account-page) .rmodal-foot {
   display: flex;
   justify-content: flex-end;
   flex-wrap: wrap;
@@ -84,17 +84,17 @@
   padding: 14px 18px;
   border-top: 1px solid hsl(var(--border));
 }
-.resident-shell .rform-field {
+:is(.resident-shell, .account-page) .rform-field {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
-.resident-shell .rform-label {
+:is(.resident-shell, .account-page) .rform-label {
   font-size: 0.78rem;
   font-weight: 800;
   color: hsl(var(--muted-foreground));
 }
-.resident-shell .rform-error {
+:is(.resident-shell, .account-page) .rform-error {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -102,6 +102,6 @@
   font-weight: 600;
   color: hsl(var(--destructive));
 }
-.resident-shell .rform-error[hidden] {
+:is(.resident-shell, .account-page) .rform-error[hidden] {
   display: none;
 }

@@ -189,6 +189,30 @@ class MessagesApiTest extends ApiTestCase
         $this->assertIsArray($data['messages']);
     }
 
+    public function testComposeTargetsListsOwnReportsAndAdoptions(): void
+    {
+        $owner = $this->seedResident();
+        $admin = $this->seedAdmin();
+        $report = $this->seedReport(['resident_id' => $owner['id']]);
+        $this->seedAdoption(['applicant_id' => $owner['id']]);
+        $data = $this->assertOk($this->get('/api/v1/messages/compose-targets', [], $this->actingAs($owner)));
+        $this->assertSame($admin['id'], $data['receiver']['id']);
+        $types = array_column($data['topics'], 'related_type');
+        $this->assertContains('report', $types);
+        $this->assertContains('adoption', $types);
+        $this->assertSame($report['id'], $data['topics'][0]['related_id']);
+    }
+
+    public function testComposeTargetsWithoutStaffFails(): void
+    {
+        $owner = $this->seedResident();
+        $this->assertError(
+            $this->get('/api/v1/messages/compose-targets', [], $this->actingAs($owner)),
+            'NO_STAFF',
+            422
+        );
+    }
+
     public function testThreadsListsOwnConversations(): void
     {
         $owner = $this->seedResident();

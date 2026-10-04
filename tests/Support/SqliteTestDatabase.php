@@ -219,6 +219,7 @@ final class SqliteTestDatabase
                 title TEXT NOT NULL,
                 category TEXT NOT NULL,
                 content_body TEXT NOT NULL,
+                quiz_json TEXT,
                 published_status TEXT NOT NULL DEFAULT 'draft',
                 created_by TEXT NOT NULL,
                 created_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -228,6 +229,9 @@ final class SqliteTestDatabase
                 resident_id TEXT NOT NULL,
                 module_id TEXT NOT NULL,
                 status TEXT NOT NULL DEFAULT 'not_started',
+                read_pct INTEGER NOT NULL DEFAULT 0,
+                quiz_passed INTEGER NOT NULL DEFAULT 0,
+                badge_earned INTEGER NOT NULL DEFAULT 0,
                 completed_at TEXT
             )",
         ];

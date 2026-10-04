@@ -69,6 +69,7 @@ $adminNav = [
         'label' => 'System',
         'items' => [
             ['key' => 'users', 'label' => 'Users', 'href' => '/admin/users/', 'icon' => 'users'],
+            ['key' => 'account', 'label' => 'Account', 'href' => '/account/', 'icon' => 'user'],
         ],
     ],
 ];

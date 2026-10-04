@@ -7,6 +7,7 @@
  */
 
 require_once __DIR__ . '/lib/bootstrap.php';
+require_once __DIR__ . '/lib/elearning_lessons.php';
 
 function seed_elearning(SeedContext $ctx): void
 {
@@ -17,9 +18,26 @@ function seed_elearning(SeedContext $ctx): void
     }
 
     seed_elearning_module_rows($ctx);
+    seed_elearning_refresh_lessons($ctx);
     $ctx->loadModules();
     $progress = seed_elearning_progress($ctx);
     echo 'E-learning: ' . count($ctx->moduleIds) . " modules, {$progress} progress rows added.\n";
+}
+
+function seed_elearning_refresh_lessons(SeedContext $ctx): int
+{
+    $stmt = $ctx->pdo->prepare('UPDATE elearning_modules SET content_body = ?, quiz_json = ? WHERE title = ?');
+    $updated = 0;
+    foreach (seed_elearning_lesson_catalog() as $title => $lesson) {
+        $stmt->execute([
+            $lesson['body'],
+            json_encode($lesson['quiz'], JSON_UNESCAPED_SLASHES),
+            $title,
+        ]);
+        $updated += $stmt->rowCount() > 0 ? 1 : 0;
+    }
+    echo "E-learning lessons refreshed: {$updated}.\n";
+    return $updated;
 }
 
 function seed_elearning_module_rows(SeedContext $ctx): int

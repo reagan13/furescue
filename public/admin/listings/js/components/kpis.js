@@ -29,5 +29,5 @@ export function buildKpis() {
 }
 
 export function KpiTile(k) {
-  return KpiCard(k);
+  return KpiCard({ ...k, compact: true });
 }

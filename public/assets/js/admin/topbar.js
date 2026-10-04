@@ -1,12 +1,24 @@
 import { DropdownMenu } from "/shared/components/dropdown-menu/dropdown-menu.js";
 
+function initialsFrom(name) {
+  const parts = String(name || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2);
+  return parts.map((part) => part.slice(0, 1).toUpperCase()).join("") || "?";
+}
+
 export function Topbar({ user } = {}) {
+  const photo = String(user?.profile_photo_url || "").trim();
+  const initials = initialsFrom(user?.full_name);
   const profileMenu = DropdownMenu({
     id: "profile-menu",
     align: "right",
     trigger: `
     <button type="button" data-dropdown-trigger class="topbar-user" aria-haspopup="menu" aria-expanded="false" aria-label="Admin menu">
-      <img src="https://i.pravatar.cc/64?img=33" alt="Admin avatar">
+      <img src="${photo}" alt="" data-shell-avatar${photo ? "" : " hidden"}>
+      <span class="topbar-user-fallback" data-shell-avatar-fallback${photo ? " hidden" : ""}>${initials}</span>
     </button>`,
     items: [
       { type: "label", text: "Insights" },
@@ -14,6 +26,7 @@ export function Topbar({ user } = {}) {
       { type: "item", icon: "file-down", label: "Reports & Exports", href: "/admin/reports/" },
       { type: "separator" },
       { type: "label", text: "System" },
+      { type: "item", icon: "user", label: "Account", href: "/account/" },
       { type: "item", icon: "users", label: "Users", href: "/admin/users/" },
       { type: "separator" },
       { type: "item", icon: "log-out", label: "Log Out", href: "/auth/logout.php", danger: true },

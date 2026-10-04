@@ -1,7 +1,7 @@
 <div class="rpage-head">
   <div>
     <h2 class="rpage-title">Responsible Pet Ownership, One Lesson at a Time</h2>
-    <p class="rpage-sub">Short guides from the City Veterinary Office &mdash; read a module, mark it complete, and track your progress.</p>
+    <p class="rpage-sub">Read each lesson, take the quiz at the end, and earn a badge. The bar fills as you read.</p>
   </div>
 </div>
 
@@ -34,12 +34,16 @@
       </div>
       <span class="rchip" id="learn-lesson-status"></span>
     </header>
+    <div class="rcard-pad">
+      <div class="learn-progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="learn-lesson-progress">
+        <span class="learn-progress-fill" style="width:0%"></span>
+      </div>
+    </div>
     <div class="rcard-pad learn-lesson-body prose-module" id="learn-lesson-content"></div>
+    <div class="rcard-pad" id="learn-badge" hidden></div>
+    <div class="rcard-pad learn-quiz" id="learn-quiz" hidden></div>
     <footer class="learn-lesson-foot">
-      <p class="learn-lesson-hint" id="learn-lesson-hint">Finished reading? Mark it complete to track your progress.</p>
-      <button type="button" class="rbtn rbtn--solid" id="learn-complete">
-        <i data-lucide="check-circle-2"></i><span>Mark Complete</span>
-      </button>
+      <p class="learn-lesson-hint" id="learn-lesson-hint">Read to the end, then take the quiz. Passing it completes the lesson.</p>
     </footer>
   </article>
 </section>

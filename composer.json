@@ -21,7 +21,9 @@
     }
   },
   "scripts": {
-    "test": "php vendor/phpunit/phpunit/phpunit"
+    "test": "php vendor/phpunit/phpunit/phpunit",
+    "test:mysql": "php vendor/phpunit/phpunit/phpunit -c phpunit.mysql.xml.dist",
+    "test:live": "php vendor/phpunit/phpunit/phpunit -c phpunit.live.xml.dist"
   },
   "config": {
     "sort-packages": true,

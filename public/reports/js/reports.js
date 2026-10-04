@@ -102,6 +102,11 @@ function reportCard(report) {
     <p class="mt-2 whitespace-pre-line text-sm leading-relaxed">${esc(report.animal_description || "")}</p>
     ${addressRow}
     ${photosHtml(photoUrlsOf(report))}
+    <div class="mt-3">
+      <a class="inline-flex items-center gap-1.5 text-sm font-semibold text-primary" href="/messages/?compose=1&amp;type=report&amp;id=${esc(report.id)}">
+        <i data-lucide="message-square" class="h-3.5 w-3.5"></i><span>Message City Vet</span>
+      </a>
+    </div>
   </article>`;
 }
 

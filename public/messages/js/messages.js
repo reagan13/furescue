@@ -5,6 +5,7 @@ import { esc, timeAgo } from "/assets/js/lib/format.js";
 import { initResidentShell } from "/assets/js/components/resident-shell.js";
 import { toast } from "/shared/components/toast/toast.js";
 import { confirmDialog } from "/shared/components/dialog/dialog.js";
+import { openCompose } from "./compose.js";
 
 const CONTEXT_LABEL = { report: "Report", case: "Case", adoption: "Adoption" };
 
@@ -75,7 +76,7 @@ function renderThreads() {
       <div class="rempty">
         <i data-lucide="inbox"></i>
         <p class="rempty-title">No conversations yet</p>
-        <p class="rempty-text">When you message the team about a report, case, or adoption, the conversation shows up here.</p>
+        <p class="rempty-text">Start a conversation with City Vet about a report or adoption — tap New message.</p>
       </div>`;
     createIcons({ icons });
     syncInboxLayout();
@@ -282,6 +283,17 @@ function boot() {
     renderThreads();
   });
 
+  document.getElementById("msg-compose")?.addEventListener("click", () => {
+    const params = new URLSearchParams(window.location.search);
+    void openCompose({
+      preselect: params.get("type") && params.get("id") ? { type: params.get("type"), id: params.get("id") } : null,
+      onSent: async (started) => {
+        await refreshThreads();
+        if (started) void openThread(`${started.related_type}|${started.related_id}`);
+      },
+    });
+  });
+
   document.getElementById("msg-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const input = document.getElementById("msg-input");
@@ -298,7 +310,12 @@ function boot() {
     void sendMessage(text);
   });
 
-  void refreshThreads();
+  void refreshThreads().then(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("compose") === "1") {
+      document.getElementById("msg-compose")?.click();
+    }
+  });
   startPolling();
 }
 

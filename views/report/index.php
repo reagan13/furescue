@@ -25,7 +25,7 @@ $btnOutline = 'inline-flex h-8 items-center justify-center gap-2 whitespace-nowr
           <?= $sectionTitle('file-text', 'Animal details') ?>
           <div class="mt-3">
             <label for="animal_description" class="<?= $labelCls ?>">Description <span class="font-normal text-muted-foreground">(required)</span></label>
-            <textarea id="animal_description" name="animal_description" rows="5" maxlength="2000" class="<?= $fieldCls ?> h-auto py-2" placeholder="What does the animal look like? Condition, behavior, anything that helps the rescue team."></textarea>
+            <textarea id="animal_description" name="animal_description" rows="6" maxlength="2000" required class="<?= $fieldCls ?> input--area input--area-lg" placeholder="What does the animal look like? Condition, behavior, anything that helps the rescue team."></textarea>
             <div class="mt-1 flex items-center justify-between">
               <p data-error-for="animal_description" class="<?= $errorCls ?>"><i data-lucide="alert-circle" class="h-3.5 w-3.5"></i><span>Please describe the animal.</span></p>
               <span id="desc-count" class="ml-auto text-xs tabular-nums text-muted-foreground">0 / 2000</span>
@@ -35,13 +35,14 @@ $btnOutline = 'inline-flex h-8 items-center justify-center gap-2 whitespace-nowr
 
         <div class="<?= $cardCls ?> p-4 sm:p-5">
           <?= $sectionTitle('camera', 'Photos &amp; videos') ?>
-          <p class="mt-2 text-xs text-muted-foreground">Optional — clear photos help verification. Up to 8 files (images or videos).</p>
+          <p class="mt-2 text-xs text-muted-foreground">Required — attach at least one clear photo or video. Up to 8 files (images or videos).</p>
           <label for="report-photos" id="photo-drop" class="mt-3 flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-input bg-background px-4 py-6 text-center transition-colors hover:bg-accent/50">
             <i data-lucide="image-plus" class="h-6 w-6 text-muted-foreground"></i>
-            <span class="text-sm font-semibold">Choose files</span>
+            <span class="text-sm font-semibold">Choose files <span class="font-normal text-muted-foreground">(required)</span></span>
             <span class="text-xs text-muted-foreground">JPG, PNG, GIF, WEBP, MP4 or WEBM — max 10 MB each</span>
-            <input id="report-photos" name="photos[]" type="file" multiple accept="image/*,video/*" class="sr-only">
+            <input id="report-photos" name="photos[]" type="file" multiple accept="image/*,video/*" required aria-required="true" class="sr-only">
           </label>
+          <p data-error-for="photos" class="<?= $errorCls ?>"><i data-lucide="alert-circle" class="h-3.5 w-3.5"></i><span>Please attach at least one photo or video.</span></p>
           <ul id="photo-list" class="mt-2 flex list-none flex-col gap-1.5 p-0"></ul>
         </div>
       </div>

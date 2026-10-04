@@ -223,6 +223,10 @@ php bin\migrate.php --fresh --yes
 php seeders\seed_users.php
 php seeders\seed.php
 php -S 127.0.0.1:8000 -t public public\index.php
+php vendor\phpunit\phpunit\phpunit
+php vendor\phpunit\phpunit\phpunit -c phpunit.mysql.xml.dist
+bin\serve-test.bat
+npx playwright test
 
 npm install
 npm run build      :: vendor ESM + Lucide subset + Tailwind
@@ -231,13 +235,36 @@ npm run watch      :: auto recompile while editing
 
 ## 6. Tests
 
-PHPUnit 10 is the only test runner. Tests are in-process (they call `Router::dispatch()` against an in-memory SQLite database). There is no live `php -S` client and no second framework (Pest, Codeception, Guzzle).
+The default suite is still in-process PHPUnit against **in-memory SQLite** (`Router::dispatch()`). That is what `composer test` runs. It does not need MySQL or `php -S`.
 
-Enable `extension=pdo_sqlite` in `php.ini` (listed in Step 1). About 31 older tests already skip when that driver is missing; the new `tests/Api/*` contract suite requires it and will skip the whole class without it.
+Enable `extension=pdo_sqlite` and `extension=curl` in `php.ini` (listed in Step 1).
 
 ```bat
 php vendor\phpunit\phpunit\phpunit
 php vendor\phpunit\phpunit\phpunit --filter Api
 ```
 
-`composer test` is a shortcut for the same PHPUnit binary.
+On-demand layers (dedicated `furescue_test` database, never the demo `furescue` schema):
+
+```bat
+copy .env.test.example .env.test
+php bin\create-test-db.php
+php bin\reset-test-db.php
+php vendor\phpunit\phpunit\phpunit -c phpunit.mysql.xml.dist
+bin\serve-test.bat
+php vendor\phpunit\phpunit\phpunit -c phpunit.live.xml.dist
+npx playwright test
+```
+
+If `create-test-db.php` is denied, create the schema as a MySQL admin first:
+
+```sql
+CREATE DATABASE IF NOT EXISTS furescue_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+GRANT ALL PRIVILEGES ON furescue_test.* TO 'furescue'@'localhost';
+GRANT ALL PRIVILEGES ON furescue_test.* TO 'furescue'@'127.0.0.1';
+FLUSH PRIVILEGES;
+```
+
+Flutter unit/widget tests (no phone): `cd d:\pepot\furescue-app\app` then `flutter test`. Device `integration_test` is phone-only.
+
+Full pyramid, commands, and the manual GPS / camera / Google / 3D checklist: **[TESTING.md](TESTING.md)**.

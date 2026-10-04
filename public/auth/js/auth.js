@@ -34,6 +34,16 @@ function destinationFor(user) {
   return homePathForRole(user);
 }
 
+async function establishPhpSession(email, password) {
+  await fetch("/auth/login.php", {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ email, password }),
+    redirect: "manual",
+  });
+}
+
 let gsiPromise = null;
 
 function loadGsiScript() {
@@ -168,7 +178,11 @@ function initSignupForm() {
         },
       });
       setSession(payload.data);
-      window.location.href = destinationFor(payload.data && payload.data.user);
+      const user = payload.data && payload.data.user;
+      if (user && user.account_status === "active") {
+        await establishPhpSession(email, password);
+      }
+      window.location.href = destinationFor(user);
     } catch (err) {
       if (btn) btn.disabled = false;
       showFormError(

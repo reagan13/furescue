@@ -8,6 +8,7 @@ export const state = {
   pollTimer: null,
   sending: false,
   loadError: "",
+  query: "",
 };
 
 export function threadKey(t) {

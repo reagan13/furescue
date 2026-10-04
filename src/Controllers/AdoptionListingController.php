@@ -2,61 +2,34 @@
 
 namespace App\Controllers;
 
-use App\Database;
+use App\Http\DomainException;
 use App\Http\Request;
 use App\Http\Response;
 use App\Services\AdoptionEligibilityService;
-use App\Services\NotificationService;
+use App\Services\ListingPhotoUpload;
+use App\Services\ResidentListingService;
 use PDO;
 
 class AdoptionListingController extends AbstractController
 {
     private AdoptionEligibilityService $eligibility;
+    private ResidentListingService $listings;
 
     public function __construct(PDO $pdo)
     {
         parent::__construct($pdo);
         $this->eligibility = new AdoptionEligibilityService($pdo);
+        $this->listings = new ResidentListingService($pdo);
     }
 
     public function create(Request $req): void
     {
-        $v = new \App\Validation\Validator($req->body);
-        $v->required('animal_id')->uuid('animal_id');
-        if (!$v->passes()) {
-            Response::error('VALIDATION_ERROR', $v->firstError(), 400);
+        $animalId = trim((string) ($req->body['animal_id'] ?? ''));
+        if ($animalId !== '') {
+            $this->createFromExisting($req, $animalId);
             return;
         }
-        $animal = $this->repo('animals')->find($req->body['animal_id']);
-        if (!$animal) {
-            Response::error('NOT_FOUND', 'Animal not found', 404);
-            return;
-        }
-        $animalId = (string) $req->body['animal_id'];
-        if (!$this->eligibility->isEligible($animalId)) {
-            $this->rejectNotHealthReady();
-            return;
-        }
-        if ($this->findLiveListing($animalId)) {
-            $this->rejectDuplicateListing();
-            return;
-        }
-        try {
-            $id = $this->repo('adoption_listings')->create([
-                'id' => Database::uuidV4(),
-                'animal_id' => $animalId,
-                'posted_by' => $req->user['id'],
-                'status' => 'pending_review',
-            ]);
-        } catch (\PDOException $e) {
-            if ($this->findLiveListing($animalId)) {
-                $this->rejectDuplicateListing();
-                return;
-            }
-            throw $e;
-        }
-        $this->notifyRole('admin', 'listing_submitted', 'A new adoption listing needs review.', 'adoption_listing', $id);
-        Response::success(['listing' => $this->repo('adoption_listings')->find($id)], 201);
+        $this->createFromProfile($req);
     }
 
     public function index(Request $req): void
@@ -66,16 +39,36 @@ class AdoptionListingController extends AbstractController
         ])) {
             return;
         }
-        $repo = $this->repo('adoption_listings');
-        $filters = [];
+        $where = [];
+        $params = [];
         if (!in_array('adoptions.read', $req->permissions, true)) {
-            $filters['posted_by'] = $req->user['id'];
+            $where[] = 'l.posted_by = ?';
+            $params[] = $req->user['id'];
         }
         if (!empty($req->query['status'])) {
-            $filters['status'] = $req->query['status'];
+            $where[] = 'l.status = ?';
+            $params[] = $req->query['status'];
         }
-        $result = $repo->paginate($this->page($req), $this->perPage($req), $filters);
-        Response::paginated($result['items'], $this->meta($result['page'], $result['per_page'], $result['total']));
+        $whereSql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
+
+        $page = $this->page($req);
+        $perPage = $this->perPage($req);
+
+        $totalStmt = $this->pdo->prepare("SELECT COUNT(*) FROM adoption_listings l {$whereSql}");
+        $totalStmt->execute($params);
+        $total = (int) $totalStmt->fetchColumn();
+
+        $stmt = $this->pdo->prepare(
+            "SELECT l.*, a.name AS animal_name, a.species, u.full_name AS poster_name
+             FROM adoption_listings l
+             LEFT JOIN animals a ON a.id = l.animal_id
+             LEFT JOIN users u ON u.id = l.posted_by
+             {$whereSql}
+             ORDER BY l.created_at DESC
+             LIMIT " . (int) $perPage . " OFFSET " . (int) (($page - 1) * $perPage)
+        );
+        $stmt->execute($params);
+        Response::paginated($stmt->fetchAll(\PDO::FETCH_ASSOC), $this->meta($page, $perPage, $total));
     }
 
     public function show(Request $req): void
@@ -83,6 +76,12 @@ class AdoptionListingController extends AbstractController
         $listing = $this->repo('adoption_listings')->find($req->params['id']);
         if (!$listing) {
             Response::error('NOT_FOUND', 'Listing not found', 404);
+            return;
+        }
+        $canReadAll = in_array('adoptions.read', $req->permissions, true);
+        $isOwner = ($req->user['id'] ?? null) === ($listing['posted_by'] ?? null);
+        if (!$canReadAll && !$isOwner) {
+            Response::error('FORBIDDEN', 'Not your listing', 403);
             return;
         }
         Response::success(['listing' => $listing]);
@@ -119,31 +118,74 @@ class AdoptionListingController extends AbstractController
             $this->repo('animals')->update($listing['animal_id'], ['adoption_status' => 'available']);
         }
 
-        $notif = new NotificationService($this->pdo);
+        $notif = new \App\Services\NotificationService($this->pdo);
         $notif->notify($listing['posted_by'], 'listing_' . $decision, 'Your adoption listing was ' . $decision . '.', 'adoption_listing', $listing['id']);
         Response::success(['listing' => $repo->find($listing['id'])]);
     }
 
-    private function findLiveListing(string $animalId): ?array
+    private function createFromExisting(Request $req, string $animalId): void
     {
-        $stmt = $this->pdo->prepare(
-            "SELECT * FROM adoption_listings
-             WHERE animal_id = ? AND status IN ('pending_review', 'approved')
-             ORDER BY created_at DESC, id DESC
-             LIMIT 1"
-        );
-        $stmt->execute([$animalId]);
-        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
-        return $row ?: null;
+        $v = new \App\Validation\Validator($req->body);
+        $v->required('animal_id')->uuid('animal_id');
+        if (!$v->passes()) {
+            Response::error('VALIDATION_ERROR', $v->firstError(), 400);
+            return;
+        }
+        try {
+            $created = $this->listings->createFromExisting((string) $req->user['id'], $animalId);
+        } catch (DomainException $e) {
+            Response::error($e->errorCode(), $e->getMessage(), $e->httpStatus());
+            return;
+        } catch (\RuntimeException $e) {
+            Response::serverError($e);
+            return;
+        }
+        $id = (string) ($created['listing']['id'] ?? '');
+        if ($id !== '') {
+            $this->notifyRole('admin', 'listing_submitted', 'A new adoption listing needs review.', 'adoption_listing', $id);
+        }
+        Response::success($created, 201);
     }
 
-    private function rejectDuplicateListing(): void
+    private function createFromProfile(Request $req): void
     {
-        Response::error(
-            'LISTING_EXISTS',
-            'This animal already has a pending or approved listing.',
-            409
-        );
+        $v = new \App\Validation\Validator($req->body);
+        $v->required('name')->string('name', 100)
+            ->required('species')->in('species', ['dog', 'cat'])
+            ->required('sex')->in('sex', ['male', 'female'])
+            ->required('description')->string('description', 2000)
+            ->optional('breed_type')->in('breed_type', ['aspin', 'puspin'])
+            ->optional('age_estimate')->string('age_estimate', 50)
+            ->optional('color_markings')->string('color_markings', 500)
+            ->optional('photo_urls')->stringOrStringList('photo_urls', 4000);
+        if (!$v->passes()) {
+            Response::error('VALIDATION_ERROR', $v->firstError(), 400);
+            return;
+        }
+        $files = $req->files('photos');
+        $urls = ListingPhotoUpload::normalizeUrlList($req->body['photo_urls'] ?? null);
+        if ($files === [] && $urls === []) {
+            Response::error('VALIDATION_ERROR', 'At least one profile photo is required.', 400);
+            return;
+        }
+        try {
+            $created = $this->listings->createFromProfile((string) $req->user['id'], $req->body, $files);
+        } catch (\InvalidArgumentException $e) {
+            $detail = $e->getMessage();
+            Response::error('VALIDATION_ERROR', $detail, 400);
+            return;
+        } catch (DomainException $e) {
+            Response::error($e->errorCode(), $e->getMessage(), $e->httpStatus());
+            return;
+        } catch (\RuntimeException $e) {
+            Response::serverError($e);
+            return;
+        }
+        $id = (string) ($created['listing']['id'] ?? '');
+        if ($id !== '') {
+            $this->notifyRole('admin', 'listing_submitted', 'A new adoption listing needs review.', 'adoption_listing', $id);
+        }
+        Response::success($created, 201);
     }
 
     private function rejectNotHealthReady(): void

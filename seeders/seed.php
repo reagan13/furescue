@@ -16,6 +16,7 @@
  *   seed_messages.php     in-app messages
  *   seed_notifications.php
  *   seed_elearning.php    modules + progress
+ *   seed_demo_roles.php   extra reports/cases for juan@ and rescuer@
  */
 
 require_once __DIR__ . '/lib/bootstrap.php';
@@ -31,6 +32,7 @@ require_once __DIR__ . '/seed_health.php';
 require_once __DIR__ . '/seed_adoptions.php';
 require_once __DIR__ . '/seed_messages.php';
 require_once __DIR__ . '/seed_notifications.php';
+require_once __DIR__ . '/seed_demo_roles.php';
 
 $started = microtime(true);
 $ctx->pdo->beginTransaction();
@@ -47,6 +49,7 @@ try {
     seed_adoptions($ctx);
     seed_messages($ctx);
     seed_notifications($ctx);
+    seed_demo_roles($ctx);
     $ctx->pdo->commit();
 } catch (Throwable $e) {
     if ($ctx->pdo->inTransaction()) {

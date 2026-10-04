@@ -221,7 +221,7 @@ class CaseController extends AbstractController
         try {
             Response::success($fn());
         } catch (\App\Services\CaseWorkflowException $e) {
-            Response::error($e->errorCode(), $e->getMessage(), $e->httpStatus());
+            Response::error($e->errorCode(), $e->publicMessage(), $e->httpStatus());
         }
     }
 

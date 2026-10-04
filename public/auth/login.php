@@ -7,7 +7,7 @@ require __DIR__ . '/../../vendor/autoload.php';
 use App\Auth\SessionAuth;
 use App\Database;
 
-Dotenv\Dotenv::createImmutable(dirname(__DIR__, 2))->safeLoad();
+App\Env::load();
 
 $googleClientId = trim((string) Database::env('GOOGLE_CLIENT_ID', ''));
 

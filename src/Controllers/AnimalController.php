@@ -53,6 +53,10 @@ class AnimalController extends AbstractController
             $where .= " AND name LIKE ?";
             $params[] = '%' . trim((string) $req->query['q']) . '%';
         }
+        if (($req->query['mine'] ?? '') === '1') {
+            $where .= " AND created_by = ?";
+            $params[] = $req->user['id'];
+        }
         $page = $this->page($req);
         $perPage = $this->perPage($req);
         $countStmt = $this->pdo->prepare("SELECT COUNT(*) FROM animals {$where}");
@@ -119,7 +123,9 @@ class AnimalController extends AbstractController
             'birth_date' => $req->body['birth_date'] ?? null,
             'color_markings' => $req->body['color_markings'] ?? null,
             'description' => $req->body['description'] ?? null,
-            'photo_urls' => isset($req->body['photo_urls']) ? json_encode($req->body['photo_urls']) : null,
+            'photo_urls' => isset($req->body['photo_urls'])
+                ? json_encode($req->body['photo_urls'])
+                : ($fromCase !== null ? $this->reportPhotoUrlsForCase($fromCase) : null),
             'model_3d_url' => $req->body['model_3d_url'] ?? null,
             'photo_360_set' => isset($req->body['photo_360_set']) ? json_encode($req->body['photo_360_set']) : null,
             'adoption_status' => $adoptionStatus,
@@ -257,6 +263,23 @@ class AnimalController extends AbstractController
             AdoptionEligibilityService::ERROR_MESSAGE,
             409
         );
+    }
+
+    private function reportPhotoUrlsForCase(string $caseId): ?string
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT r.photo_urls FROM cases c INNER JOIN reports r ON r.id = c.report_id WHERE c.id = ? LIMIT 1'
+        );
+        $stmt->execute([$caseId]);
+        $raw = $stmt->fetchColumn();
+        if (!is_string($raw)) {
+            return null;
+        }
+        $trim = trim($raw);
+        if ($trim === '' || $trim === 'null' || $trim === '[]') {
+            return null;
+        }
+        return $raw;
     }
 
     private function optionalCaseId(array $body): ?string

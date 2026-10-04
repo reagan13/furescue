@@ -2,7 +2,7 @@ import { PaginationBar } from "/shared/components/pagination/pagination.js";
 import { Button } from "/shared/components/button/button.js";
 import { shortId, timeAgo } from "/admin/js/helpers.js";
 import { state } from "../state.js";
-import { esc, statusLabel, stampCls, emptyMessage } from "./util.js";
+import { esc, statusLabel, stampCls, emptyMessage, speciesLabel } from "./util.js";
 
 export function filteredListings() {
   const q = state.query.trim().toLowerCase();
@@ -10,7 +10,7 @@ export function filteredListings() {
   if (state.filter !== "all") list = list.filter((row) => row.status === state.filter);
   if (q) {
     list = list.filter((row) =>
-      [row.animal_name, row.poster_name, row.status, shortId(row.id), row.review_notes]
+      [row.animal_name, row.species, speciesLabel(row.species), row.poster_name, row.status, shortId(row.id), row.review_notes]
         .join(" ")
         .toLowerCase()
         .includes(q)
@@ -50,6 +50,7 @@ function listingRow(row) {
   return `
     <tr data-id="${esc(row.id)}">
       <td class="table-cell table-cell--strong">${esc(name)}</td>
+      <td class="table-cell">${esc(speciesLabel(row.species))}</td>
       <td class="table-cell">${esc(poster)}</td>
       <td class="table-cell"><span class="stamp stamp--sm ${stampCls(row.status)}">${esc(statusLabel(row.status))}</span></td>
       <td class="table-cell table-cell--mono table-cell--muted">${esc(timeAgo(row.created_at))}</td>
@@ -79,7 +80,7 @@ export function ListingTable() {
       <table class="table">
         <thead>
           <tr class="table-head">
-            <th>Animal</th><th>Poster</th><th>Status</th><th>Posted</th><th class="table-cell--right">Action</th>
+            <th>Animal</th><th>Species</th><th>Poster</th><th>Status</th><th>Posted</th><th class="table-cell--right">Action</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>

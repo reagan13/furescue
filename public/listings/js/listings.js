@@ -1,10 +1,10 @@
 import { createIcons, icons } from "lucide";
-import { apiFetch, apiFetchFull, redirectToLogin } from "/assets/js/lib/api.js";
+import { apiFetchFull, redirectToLogin } from "/assets/js/lib/api.js";
 import { bootstrapPageAuth } from "/assets/js/lib/page-auth.js";
 import { initResidentShell } from "/assets/js/components/resident-shell.js";
 import { toast } from "/shared/components/toast/toast.js";
-import { confirmDialog } from "/shared/components/dialog/dialog.js";
 import { esc, timeAgo } from "/assets/js/lib/format.js";
+import { openListingForm } from "./form.js";
 
 const el = (id) => document.getElementById(id);
 
@@ -97,110 +97,6 @@ async function load() {
   }
 }
 
-function openNewListingModal() {
-  // animals that already have an active listing of mine stay out of the picker
-  return apiFetchFull("/adoption-listings?per_page=100").then((payload) => {
-    const taken = new Set(
-      (Array.isArray(payload.data) ? payload.data : [])
-        .filter((l) => l.status === "pending_review" || l.status === "approved")
-        .map((l) => l.animal_id)
-    );
-    const options = [...animalMap.values()].filter((a) => !taken.has(a.id));
-
-    if (!options.length) {
-      toast("All rescued animals already have an active listing.", { type: "error" });
-      return;
-    }
-
-    const overlay = document.createElement("div");
-    overlay.className = "rmodal-overlay";
-    overlay.innerHTML = `
-      <div class="rmodal" role="dialog" aria-modal="true" aria-labelledby="listing-title">
-        <div class="rmodal-head">
-          <i data-lucide="megaphone" class="text-primary"></i>
-          <h2 class="rmodal-title" id="listing-title">Post for adoption</h2>
-          <button type="button" class="rmodal-x" aria-label="Close"><i data-lucide="x"></i></button>
-        </div>
-        <div class="rmodal-body">
-          <p class="m-0 text-sm text-muted-foreground">Pick the rescued animal you want to rehome. Once approved, it appears in the public adoption gallery.</p>
-          <div class="rform-field">
-            <label for="listing-animal" class="rform-label">Animal</label>
-            <select id="listing-animal" class="input">
-              ${options
-                .map(
-                  (a) =>
-                    `<option value="${esc(a.id)}">${esc(a.name || "Unnamed")} · ${esc(
-                      String(a.species || "").toUpperCase()
-                    )}${a.breed_type ? ` (${esc(String(a.breed_type))})` : ""}</option>`
-                )
-                .join("")}
-            </select>
-          </div>
-          <p class="rform-error" id="listing-error" hidden><i data-lucide="alert-circle" class="h-3.5 w-3.5"></i><span>Something went wrong.</span></p>
-        </div>
-        <div class="rmodal-foot">
-          <button type="button" class="rbtn rbtn--ghost" data-act="cancel">Cancel</button>
-          <button type="button" class="rbtn rbtn--solid" data-act="submit"><i data-lucide="send"></i><span>Submit for review</span></button>
-        </div>
-      </div>`;
-    const host = document.querySelector(".resident-shell") || document.body;
-    host.appendChild(overlay);
-    const body = overlay.querySelector(".rmodal-body");
-    const foot = overlay.querySelector(".rmodal-foot");
-    if (body) {
-      body.style.flex = "1 1 auto";
-      body.style.minHeight = "0";
-    }
-    if (foot) foot.style.flexShrink = "0";
-    createIcons({ icons });
-
-    const close = () => {
-      document.removeEventListener("keydown", onEsc);
-      overlay.remove();
-    };
-    const onEsc = (e) => {
-      if (e.key === "Escape") close();
-    };
-    document.addEventListener("keydown", onEsc);
-    overlay.addEventListener("click", (e) => {
-      if (e.target === overlay) close();
-    });
-    overlay.querySelector('[data-act="cancel"]').addEventListener("click", close);
-    overlay.querySelector(".rmodal-x").addEventListener("click", close);
-
-    overlay.querySelector('[data-act="submit"]').addEventListener("click", async (e) => {
-      const select = overlay.querySelector("#listing-animal");
-      const animalLabel =
-        (select && select.options[select.selectedIndex] && select.options[select.selectedIndex].text) ||
-        "this animal";
-      const ok = await confirmDialog({
-        title: "Create this adoption listing?",
-        message: `This will submit an adoption listing for ${animalLabel}.`,
-        confirmText: "Create listing",
-      });
-      if (!ok) return;
-      const btn = e.currentTarget;
-      const errorEl = overlay.querySelector("#listing-error");
-      errorEl.hidden = true;
-      btn.disabled = true;
-      try {
-        await apiFetch("/adoption-listings", {
-          method: "POST",
-          body: { animal_id: overlay.querySelector("#listing-animal").value },
-        });
-        close();
-        toast("Listing submitted! You'll be notified once it's reviewed.", { type: "success", duration: 5000 });
-        await load();
-      } catch (err) {
-        btn.disabled = false;
-        errorEl.querySelector("span").textContent =
-          err.code === "VALIDATION_ERROR" ? err.message : err.message || "Could not submit the listing.";
-        errorEl.hidden = false;
-      }
-    });
-  });
-}
-
 function boot() {
   const user = bootstrapPageAuth();
   if (!user) {
@@ -212,10 +108,10 @@ function boot() {
   const ready = load();
   el("btn-new-listing").addEventListener("click", () => {
     ready
-      .then(() => openNewListingModal())
+      .then(() => openListingForm({ onCreated: load }))
       .catch((err) => {
         if (err && err.status === 401) redirectToLogin();
-        else toast(err.message || "Could not load animals.", { type: "error" });
+        else toast(err.message || "Could not open the form.", { type: "error" });
       });
   });
 }
