@@ -332,4 +332,20 @@ class AdoptionsApiTest extends ApiTestCase
         $this->assertArrayHasKey('photo_urls', $items[0]);
         $this->assertStringContainsString('ace.svg', (string) $items[0]['photo_urls']);
     }
+
+    public function testListIncludesAnimalIdWhenAnimalExists(): void
+    {
+        $resident = $this->seedResident();
+        $animal = $this->seedAnimal([
+            'name' => 'Ace',
+            'adoption_status' => 'available',
+        ]);
+        $this->seedAdoption([
+            'animal_id' => $animal['id'],
+            'applicant_id' => $resident['id'],
+        ]);
+        $items = $this->assertOk($this->get('/api/v1/adoptions', [], $this->actingAs($resident)));
+        $this->assertCount(1, $items);
+        $this->assertSame($animal['id'], $items[0]['animal_id'] ?? null);
+    }
 }

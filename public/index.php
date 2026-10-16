@@ -41,6 +41,17 @@ if (
     exit;
 }
 if ($docRoot !== false && $requestPath !== false && str_starts_with($requestPath, $docRoot . DIRECTORY_SEPARATOR) && is_file($requestPath)) {
+    // php -S returns existing files before the /uploads handler. model-viewer
+    // fetches the GLB after a redirect from its localhost proxy, so that
+    // response needs CORS or the WebView canvas stays blank.
+    $staticExt = strtolower(pathinfo($requestPath, PATHINFO_EXTENSION));
+    if ($staticExt === 'glb' || $staticExt === 'gltf') {
+        header('Access-Control-Allow-Origin: *');
+        header('Content-Type: ' . ($staticExt === 'glb' ? 'model/gltf-binary' : 'model/gltf+json'));
+        header('Content-Length: ' . (string) filesize($requestPath));
+        readfile($requestPath);
+        exit;
+    }
     return false;
 }
 if (

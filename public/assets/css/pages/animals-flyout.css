@@ -45,8 +45,9 @@
 }
 @media (max-width: 560px) {
   .af-flyout {
-    width: 100vw;
-    max-width: none;
+    /* 100vw includes the scrollbar and pushes the page sideways. */
+    width: 100%;
+    max-width: 100%;
     border-right-width: 0;
   }
 }

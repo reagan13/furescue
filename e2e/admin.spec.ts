@@ -18,6 +18,9 @@ const consolePages: Array<{ path: string; text: string }> = [
 
 test.describe('admin console', () => {
   test('page map loads on desktop', async ({ page }) => {
+    // php -S handles one request at a time, so this walk of every console page
+    // exceeds the default 45s before the listings document finishes loading.
+    test.setTimeout(180_000);
     await page.setViewportSize({ width: 1440, height: 900 });
     await openAs(page, accounts.admin, '/admin/');
     await expect(page.locator('body')).toContainText('Command Center');
