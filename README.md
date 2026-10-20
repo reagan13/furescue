@@ -85,5 +85,6 @@ Resident and rescuer Android work lives in the sibling repo [`D:\pepot\furescue-
 | [ARCHITECTURE_AUDIT.md](docs/technical/ARCHITECTURE_AUDIT.md) | Historical snapshot (pre-`public/` tree) — do not treat as live |
 | [FEATURES.md](docs/technical/FEATURES.md) | Feature inventory (as built) — what is implemented per feature area, with evidence |
 | [HOW_TO_RUN.md](docs/technical/HOW_TO_RUN.md) | Install, configure, migrate, seed, and run |
+| [HANDOVER_RUN.md](docs/technical/HANDOVER_RUN.md) | Agent checklist: seed, serve, and check web through the phone |
 | [SYSTEM_REPORT.md](docs/technical/SYSTEM_REPORT.md) | System report |
 | [WORKFLOWS.md](docs/technical/WORKFLOWS.md) | Study objectives → pages, role flows, mermaid diagrams |

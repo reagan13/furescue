@@ -4,6 +4,8 @@ Step-by-step guide to install, configure, and run the **FurEscue** rescue-manage
 
 FurEscue runs on **one server**: a single PHP built-in server serves both the API (`/api/v1/...`) and all static pages/uploads from the single web root `public/`. Every command below is run from the **repository root** (the folder containing `composer.json`).
 
+After install, the pass order from this server through the Android app is **[HANDOVER_RUN.md](HANDOVER_RUN.md)**.
+
 ---
 
 ## 1. What you need to install (with download links)

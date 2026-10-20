@@ -40,6 +40,7 @@ Then only what the task needs:
 - JWT: src\Auth\JwtService.php
 - Tokens / type: public\assets\css\tokens.css + docs\study\DESIGN_SYSTEM.md
 - Run / seed: docs\technical\HOW_TO_RUN.md
+- Bring-up and pass check (web through phone): docs\technical\HANDOVER_RUN.md
 - Tests: docs\technical\TESTING.md
 - Folder / CSS cascade: docs\technical\FOLDER_ARCHITECTURE.md
 - URL freeze: docs\technical\FOLDER_OVERHAUL_SPEC.md §4
@@ -50,6 +51,7 @@ Phone (only when touching Flutter):
 2. D:\pepot\furescue-app\docs\01-mobile.md
 3. D:\pepot\furescue-app\docs\02-how-to-run.md
 4. D:\pepot\furescue-app\docs\03-handover.md
+5. D:\pepot\furescue-app\docs\04-handover-run.md   (seed, serve, phone check)
 
 Labels in mobile docs: STUDY = web requirement; IMPLEMENTATION = phone-only decision; OPEN = do not invent in code.
 
