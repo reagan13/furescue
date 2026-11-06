@@ -8,6 +8,7 @@ use App\Http\Request;
 use App\Http\Response;
 use App\Repositories\CaseRepository;
 use App\Repositories\UserRepository;
+use App\Services\CaseHealthService;
 use App\Services\CaseProofUpload;
 use App\Services\CaseWorkflowService;
 use App\Services\NotificationService;
@@ -66,7 +67,8 @@ class CaseController extends AbstractController
         $total = (int) $totalStmt->fetchColumn();
 
         $stmt = $this->pdo->prepare(
-            "SELECT c.*, r.animal_description, r.address_text, u.full_name AS assigned_rescuer_name
+            "SELECT c.*, r.animal_description, r.address_text, r.latitude, r.longitude, r.photo_urls,
+                    r.species AS report_species, u.full_name AS assigned_rescuer_name
              FROM cases c
              LEFT JOIN reports r ON r.id = c.report_id
              LEFT JOIN users u ON u.id = c.assigned_rescuer_id
@@ -91,7 +93,58 @@ class CaseController extends AbstractController
         }
         $payload = $case->toArray();
         $payload['animal_id'] = $this->lookupAnimalId($case->id());
+        $this->attachReport($payload, $case->reportId());
+        $payload['health'] = (new CaseHealthService($this->pdo))->snapshot($case->id());
         Response::success(['case' => $payload]);
+    }
+
+    public function addVaccination(Request $req): void
+    {
+        $case = $this->requireAccessible($req);
+        if (!$case) {
+            return;
+        }
+        $v = new \App\Validation\Validator($req->body);
+        $v->required('name')->string('name', 80)
+            ->required('date_given')->string('date_given', 32);
+        if (!$v->passes()) {
+            Response::error('VALIDATION_ERROR', $v->firstError(), 400);
+            return;
+        }
+        $date = \DateTime::createFromFormat('Y-m-d', (string) $req->body['date_given']);
+        if (!$date || $date->format('Y-m-d') !== (string) $req->body['date_given']) {
+            Response::error('VALIDATION_ERROR', 'date_given must be YYYY-MM-DD', 400);
+            return;
+        }
+        $this->respondWorkflow(fn () => [
+            'health' => (new CaseHealthService($this->pdo))->addVaccination(
+                $case->id(),
+                (string) $req->user['id'],
+                trim((string) $req->body['name']),
+                $date->format('Y-m-d')
+            ),
+        ]);
+    }
+
+    public function addHeartRate(Request $req): void
+    {
+        $case = $this->requireAccessible($req);
+        if (!$case) {
+            return;
+        }
+        $v = new \App\Validation\Validator($req->body);
+        $v->required('heart_rate_bpm')->numeric('heart_rate_bpm')->min('heart_rate_bpm', 1);
+        if (!$v->passes()) {
+            Response::error('VALIDATION_ERROR', $v->firstError(), 400);
+            return;
+        }
+        $this->respondWorkflow(fn () => [
+            'health' => (new CaseHealthService($this->pdo))->addHeartRate(
+                $case->id(),
+                (string) $req->user['id'],
+                (int) $req->body['heart_rate_bpm']
+            ),
+        ]);
     }
 
     public function assign(Request $req): void
@@ -202,6 +255,48 @@ class CaseController extends AbstractController
             return true;
         }
         return $case->assignedRescuerId() !== null && $case->assignedRescuerId() === ($req->user['id'] ?? null);
+    }
+
+    private function requireAccessible(Request $req): ?RescueCase
+    {
+        $case = $this->cases->find($req->params['id']);
+        if (!$case) {
+            Response::error('NOT_FOUND', 'Case not found', 404);
+            return null;
+        }
+        if (!$this->canAccessCase($req, $case)) {
+            Response::error('FORBIDDEN', 'Not your case', 403);
+            return null;
+        }
+
+        return $case;
+    }
+
+    /**
+     * @param array<string,mixed> $payload
+     */
+    private function attachReport(array &$payload, ?string $reportId): void
+    {
+        if ($reportId === null || $reportId === '') {
+            return;
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT animal_description, address_text, latitude, longitude, photo_urls, species, resident_id
+             FROM reports WHERE id = ? LIMIT 1'
+        );
+        $stmt->execute([$reportId]);
+        $report = $stmt->fetch(\PDO::FETCH_ASSOC);
+        if (!$report) {
+            return;
+        }
+        $payload['animal_description'] = $report['animal_description'];
+        $payload['address_text'] = $report['address_text'];
+        $payload['latitude'] = $report['latitude'];
+        $payload['longitude'] = $report['longitude'];
+        $payload['photo_urls'] = $report['photo_urls'];
+        $payload['species'] = $report['species'];
+        $payload['resident_id'] = $report['resident_id'];
+        $payload['report'] = $report;
     }
 
     private function lookupAnimalId(string $caseId): ?string

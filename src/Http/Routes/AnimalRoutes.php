@@ -29,7 +29,7 @@ class AnimalRoutes
 
         $router->add('GET', '/api/v1/animals/{id}/medical', fn(Request $r) => (new AnimalMedicalController($pdo))->show($r), [$authMw]);
         $router->add('PUT', '/api/v1/animals/{id}/medical', fn(Request $r) => (new AnimalMedicalController($pdo))->upsert($r), [$authMw, new PermissionMiddleware('animals.medical.write')]);
-        $router->add('GET', '/api/v1/animals/{id}/health-record', fn(Request $r) => (new HealthController($pdo))->record($r), [$authMw]);
+        $router->add('GET', '/api/v1/animals/{id}/health-record', fn(Request $r) => (new HealthController($pdo))->record($r), [$authMw, new PermissionMiddleware('animals.medical.read')]);
 
         $router->add('POST', '/api/v1/vitals', fn(Request $r) => (new VitalsController($pdo))->ingest($r));
         $router->add('GET', '/api/v1/animals/{id}/vitals', fn(Request $r) => (new VitalsController($pdo))->list($r), [$authMw]);

@@ -89,23 +89,10 @@ $stmt = $pdo->prepare($trendSql);
 $stmt->execute($trendArgs);
 $trends = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
-$updateSql = "SELECT fs.id, fs.animal_id, fs.rescue_status, fs.health_status, fs.logged_at,
-            a.name AS animal_name, a.species, a.breed_type,
-            u.full_name AS logged_by_name
-     FROM animal_field_status fs
-     JOIN animals a ON a.id = fs.animal_id
-     LEFT JOIN users u ON u.id = fs.logged_by";
-$updateArgs = [];
-if ($ranged) {
-    $updateSql .= " WHERE DATE(fs.logged_at) BETWEEN ? AND ?";
-    $updateArgs = [$start, $end];
-}
-$updateSql .= $ranged
-    ? " ORDER BY fs.logged_at DESC LIMIT 500"
-    : " ORDER BY fs.logged_at DESC LIMIT 50";
-$stmt = $pdo->prepare($updateSql);
-$stmt->execute($updateArgs);
-$updates = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+$summary = new \App\Services\AnalyticsSummary($pdo);
+$rescue = $summary->rescueActivity();
+$places = $summary->geographic();
+$updates = $summary->medicalUpdates($ranged ? $start : null, $ranged ? $end : null);
 
 $stmt = $pdo->prepare(
     "SELECT u.id, u.full_name, u.email, u.phone_number,

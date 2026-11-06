@@ -90,7 +90,7 @@ async function deleteRecord() {
   if (!record || !record.id) return;
   const ok = await confirmDialog({
     title: "Delete this animal?",
-    message: `Delete "${record.name || "this animal"}"? This is a soft delete and can be restored by an admin.`,
+    message: `Hide "${record.name || "this animal"}"? The record stays in the database and no longer appears in the shelter list.`,
     confirmText: "Delete",
     cancelText: "Cancel",
     danger: true,

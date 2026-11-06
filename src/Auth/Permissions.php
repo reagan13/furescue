@@ -110,7 +110,6 @@ class Permissions
             'cases.status_change',
             'animals.read',
             'animals.vitals.read',
-            'reports.read',
             'notifications.read',
             'elearning.read',
             'users.update_self',

@@ -69,6 +69,14 @@ async function load() {
     } else {
       el("adoptions-empty").hidden = true;
       list.innerHTML = rows.map(rowHtml).join("");
+      const focusId = new URLSearchParams(location.search).get("id");
+      if (focusId) {
+        const row = list.querySelector(`[data-id="${CSS.escape(focusId)}"]`);
+        if (row) {
+          row.classList.add("is-record-focus");
+          row.scrollIntoView({ block: "center" });
+        }
+      }
     }
     createIcons({ icons });
   } catch (err) {

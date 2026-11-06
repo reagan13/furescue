@@ -77,6 +77,36 @@ class MessagesApiTest extends ApiTestCase
         ], $this->actingAs($other)), 'FORBIDDEN', 403);
     }
 
+    public function testResidentCanMessageTheAssignedRescuer(): void
+    {
+        $owner = $this->seedResident();
+        $rescuer = $this->seedRescuer();
+        $this->seedAdmin();
+        $report = $this->seedReport(['resident_id' => $owner['id']]);
+        $case = $this->seedCase([
+            'report_id' => $report['id'],
+            'assigned_rescuer_id' => $rescuer['id'],
+            'status' => 'assigned',
+        ]);
+        $targets = $this->assertOk($this->get('/api/v1/messages/compose-targets', [], $this->actingAs($owner)));
+        $topic = null;
+        foreach ($targets['topics'] as $row) {
+            if ($row['related_id'] === $case['id']) {
+                $topic = $row;
+            }
+        }
+        $this->assertNotNull($topic);
+        $ids = array_column($topic['receivers'], 'id');
+        $this->assertContains($rescuer['id'], $ids);
+        $sent = $this->assertOk($this->post('/api/v1/messages', [
+            'receiver_id' => $rescuer['id'],
+            'related_type' => 'case',
+            'related_id' => $case['id'],
+            'message_text' => 'The dog is by the chapel.',
+        ], $this->actingAs($owner)), 201);
+        $this->assertSame($rescuer['id'], $sent['message']['receiver_id']);
+    }
+
     public function testOwnerCanMessageAboutOwnReport(): void
     {
         $owner = $this->seedResident();

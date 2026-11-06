@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Http\Request;
 use App\Http\Response;
+use App\Services\AnalyticsSummary;
 
 class AnalyticsController extends AbstractController
 {
@@ -65,15 +66,14 @@ class AnalyticsController extends AbstractController
                 (string) ($u['animal_name'] ?? ''),
                 (string) ($u['species'] ?? ''),
                 (string) ($u['breed_type'] ?? ''),
-                (string) ($u['rescue_status'] ?? ''),
-                (string) ($u['health_status'] ?? ''),
-                (string) ($u['logged_by_name'] ?? ''),
-                (string) ($u['logged_at'] ?? ''),
+                (string) ($u['vaccination_status'] ?? ''),
+                (string) ($u['updated_by_name'] ?? ''),
+                (string) ($u['updated_at'] ?? ''),
             ];
         }, $this->healthUpdateRows($req));
         $this->csv(
             'furescue-health-updates-' . date('Y-m-d') . '.csv',
-            ['ID', 'Animal', 'Species', 'Breed', 'Rescue Status', 'Health Status', 'Logged By', 'Logged At'],
+            ['ID', 'Animal', 'Species', 'Breed', 'Vaccination', 'Updated By', 'Updated At'],
             $rows
         );
     }
@@ -91,6 +91,8 @@ class AnalyticsController extends AbstractController
             'adoptions_completed' => $this->countWhere("adoptions", "status = 'completed'"),
             ...$this->rescuerDutyCounts(),
             'residents' => $this->countWhere("users", "role = 'resident'"),
+            'rescue_activity' => (new AnalyticsSummary($this->pdo))->rescueActivity(),
+            'geographic' => (new AnalyticsSummary($this->pdo))->geographic(),
             'cases_in_progress' => $this->countWhere("cases", "status IN ('assigned','in_progress')"),
             'reports_pending' => $this->countWhere("reports", "status = 'pending_verification'"),
             'reports_today' => $this->countWhere("reports", "DATE(created_at) = CURDATE()"),
@@ -151,24 +153,8 @@ class AnalyticsController extends AbstractController
     private function healthUpdateRows(Request $req): array
     {
         [$start, $end] = $this->range($req);
-        $ranged = $start !== null && $end !== null;
-        $sql = "SELECT fs.id, fs.animal_id, fs.rescue_status, fs.health_status, fs.logged_at,
-                    a.name AS animal_name, a.species, a.breed_type,
-                    u.full_name AS logged_by_name
-             FROM animal_field_status fs
-             JOIN animals a ON a.id = fs.animal_id
-             LEFT JOIN users u ON u.id = fs.logged_by";
-        $args = [];
-        if ($ranged) {
-            $sql .= " WHERE DATE(fs.logged_at) BETWEEN ? AND ?";
-            $args = [$start, $end];
-        }
-        $sql .= $ranged
-            ? " ORDER BY fs.logged_at DESC LIMIT 500"
-            : " ORDER BY fs.logged_at DESC LIMIT 50";
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($args);
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        return (new AnalyticsSummary($this->pdo))->medicalUpdates($start, $end);
     }
 
     private function range(Request $req): array

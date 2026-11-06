@@ -63,14 +63,16 @@ export function mapPersonnel(r) {
 }
 
 export function mapHealthUpdate(h) {
-  const healthy = (h.health_status ?? "") === "healthy";
+  const status = h.vaccination_status || "none";
+  const label =
+    status === "complete" ? "Vaccination complete" : status === "partial" ? "Vaccination partial" : "No vaccination";
   const parts = [h.animal_name ?? "", h.breed_type ?? ""].filter((p) => p !== "");
   return {
     id: shortId(h.id),
     animal: parts.length ? parts.join(", ") : "Unnamed animal",
-    by: h.logged_by_name || "—",
-    when: timeAgo(h.logged_at),
-    status: healthy ? "Stable" : "Needs Attention",
-    statusCls: healthy ? "stamp--accent" : "stamp--coral",
+    by: h.updated_by_name || "—",
+    when: timeAgo(h.updated_at),
+    status: label,
+    statusCls: status === "complete" ? "stamp--accent" : "stamp--coral",
   };
 }

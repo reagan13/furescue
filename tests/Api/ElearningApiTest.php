@@ -228,6 +228,23 @@ class ElearningApiTest extends ApiTestCase
         $this->assertNotEmpty($data['progress']['completed_at']);
     }
 
+    public function testAdminCanSaveQuizWithTheLesson(): void
+    {
+        $admin = $this->seedAdmin();
+        $module = $this->seedModule();
+        $quiz = [['q' => 'Which animal?', 'options' => ['Dog', 'Fish'], 'a' => 0]];
+        $this->assertOk($this->patch('/api/v1/elearning/modules/' . $module['id'], [
+            'quiz_json' => $quiz,
+        ], $this->actingAs($admin)));
+        $saved = $this->assertOk($this->get('/api/v1/elearning/modules/' . $module['id'], [], $this->actingAs($admin)));
+        $this->assertSame('Which animal?', $saved['module']['quiz_json'][0]['q']);
+        $resident = $this->seedResident();
+        $public = $this->assertOk($this->get('/api/v1/elearning/modules/' . $module['id'], [], $this->actingAs($resident)));
+        $this->assertArrayNotHasKey('quiz_json', $public['module']);
+        $this->assertSame(['Dog', 'Fish'], $public['module']['quiz'][0]['options']);
+        $this->assertArrayNotHasKey('a', $public['module']['quiz'][0]);
+    }
+
     public function testProgressListIsScoped(): void
     {
         $resident = $this->seedResident();

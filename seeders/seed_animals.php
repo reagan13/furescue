@@ -25,6 +25,38 @@ function seed_animals(SeedContext $ctx): void
     $ctx->loadAnimals();
     echo 'Animals: ' . ($fromCases + $fromResidents) . ' new, ' . count($ctx->animalIds) . " active.\n";
     seed_animal_portraits($ctx);
+    seed_animal_models($ctx);
+}
+
+function seed_animal_models(SeedContext $ctx): void
+{
+    $map = [
+        'dog' => '/uploads/demo/models/dog.glb',
+        'cat' => '/uploads/demo/models/cat.glb',
+    ];
+    foreach ($map as $species => $url) {
+        $stmt = $ctx->pdo->prepare(
+            "SELECT id FROM animals
+             WHERE species = ? AND deleted_at IS NULL
+             ORDER BY CASE WHEN adoption_status = 'available' THEN 0 ELSE 1 END, created_at ASC
+             LIMIT 1"
+        );
+        $stmt->execute([$species]);
+        $id = $stmt->fetchColumn();
+        if (!$id) {
+            continue;
+        }
+        $ctx->pdo->prepare(
+            "UPDATE animals
+             SET model_3d_url = ?,
+                 adoption_status = CASE
+                     WHEN adoption_status = 'not_listed' THEN 'available'
+                     ELSE adoption_status
+                 END
+             WHERE id = ?"
+        )->execute([$url, $id]);
+    }
+    echo "3D profiles: one dog and one cat model linked.\n";
 }
 
 function seed_animals_from_cases(SeedContext $ctx): int

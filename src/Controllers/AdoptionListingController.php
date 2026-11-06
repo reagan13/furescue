@@ -103,9 +103,21 @@ class AdoptionListingController extends AbstractController
             Response::error('NOT_FOUND', 'Listing not found', 404);
             return;
         }
-        if ($decision === 'approved' && !$this->eligibility->isEligible($listing['animal_id'])) {
-            $this->rejectNotHealthReady();
-            return;
+        if ($decision === 'approved') {
+            try {
+                $this->listings->recordMinimumHealth(
+                    (string) $listing['animal_id'],
+                    (string) $req->user['id'],
+                    $req->body
+                );
+            } catch (\InvalidArgumentException $e) {
+                Response::error('VALIDATION_ERROR', $e->getMessage(), 400);
+                return;
+            }
+            if (!$this->eligibility->isEligible($listing['animal_id'])) {
+                $this->rejectNotHealthReady();
+                return;
+            }
         }
         $repo->update($listing['id'], [
             'status' => $decision === 'approved' ? 'approved' : 'rejected',
@@ -157,7 +169,11 @@ class AdoptionListingController extends AbstractController
             ->optional('breed_type')->in('breed_type', ['aspin', 'puspin'])
             ->optional('age_estimate')->string('age_estimate', 50)
             ->optional('color_markings')->string('color_markings', 500)
-            ->optional('photo_urls')->stringOrStringList('photo_urls', 4000);
+            ->optional('photo_urls')->stringOrStringList('photo_urls', 4000)
+            ->optional('vaccine_name')->string('vaccine_name', 80)
+            ->optional('vaccine_date')->string('vaccine_date', 32)
+            ->optional('weight_kg')->numeric('weight_kg')
+            ->optional('heart_rate_bpm')->numeric('heart_rate_bpm');
         if (!$v->passes()) {
             Response::error('VALIDATION_ERROR', $v->firstError(), 400);
             return;

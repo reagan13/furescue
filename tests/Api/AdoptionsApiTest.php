@@ -16,6 +16,9 @@ class AdoptionsApiTest extends ApiTestCase
             $this->actingAs($resident)
         ), 201);
         $this->assertSame('pending', $data['adoption']['status']);
+        $admin = $this->seedAdmin();
+        $animalRow = $this->assertOk($this->get('/api/v1/animals/' . $animal['id'], [], $this->actingAs($admin)));
+        $this->assertSame('pending', $animalRow['animal']['adoption_status']);
     }
 
     public function testCannotApplyForNotListedAnimal(): void
@@ -198,6 +201,12 @@ class AdoptionsApiTest extends ApiTestCase
             $this->actingAs($admin)
         ));
         $this->assertSame('approved', $data['adoption']['status']);
+        $animalRow = $this->assertOk($this->get(
+            '/api/v1/animals/' . $adoption['animal_id'],
+            [],
+            $this->actingAs($admin)
+        ));
+        $this->assertSame('pending', $animalRow['animal']['adoption_status']);
     }
 
     public function testRejectRequiresReason(): void
@@ -255,6 +264,12 @@ class AdoptionsApiTest extends ApiTestCase
             $this->actingAs($admin)
         ));
         $this->assertSame('completed', $data['adoption']['status']);
+        $animalRow = $this->assertOk($this->get(
+            '/api/v1/animals/' . $adoption['animal_id'],
+            [],
+            $this->actingAs($admin)
+        ));
+        $this->assertSame('adopted', $animalRow['animal']['adoption_status']);
     }
 
     public function testResidentCannotApprove(): void

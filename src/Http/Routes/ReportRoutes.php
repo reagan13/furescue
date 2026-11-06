@@ -18,7 +18,8 @@ class ReportRoutes
 
         $router->add('POST', '/api/v1/reports', fn(Request $r) => (new ReportController($pdo, $dedup, $geo))->create($r), [$authMw, new PermissionMiddleware('reports.create')]);
         $router->add('GET', '/api/v1/reports/me', fn(Request $r) => (new ReportController($pdo, $dedup, $geo))->mine($r), [$authMw]);
-        $router->add('GET', '/api/v1/reports/map/heatmap', fn(Request $r) => (new ReportController($pdo, $dedup, $geo))->heatmap($r), [$authMw]);
+        $router->add('GET', '/api/v1/reports/map/heatmap', fn(Request $r) => (new ReportController($pdo, $dedup, $geo))->heatmap($r), [$authMw, new PermissionMiddleware('analytics.read')]);
+        $router->add('POST', '/api/v1/reports/{id}/withdraw', fn(Request $r) => (new ReportController($pdo, $dedup, $geo))->withdraw($r), [$authMw]);
         $router->add('GET', '/api/v1/reports', fn(Request $r) => (new ReportController($pdo, $dedup, $geo))->index($r), [$authMw]);
         $router->add('GET', '/api/v1/reports/{id}', fn(Request $r) => (new ReportController($pdo, $dedup, $geo))->show($r), [$authMw]);
         $router->add('POST', '/api/v1/reports/{id}/media', fn(Request $r) => (new ReportController($pdo, $dedup, $geo))->uploadMedia($r), [$authMw]);

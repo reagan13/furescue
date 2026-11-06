@@ -9,7 +9,7 @@ use PDO;
 class ReportRepository
 {
     private const COLUMNS = [
-        'id', 'resident_id', 'animal_description', 'photo_urls', 'latitude', 'longitude',
+        'id', 'resident_id', 'animal_description', 'species', 'photo_urls', 'latitude', 'longitude',
         'address_text', 'content_hash', 'duplicate_of_report_id', 'validation_status',
         'status', 'dismiss_reason', 'verified_by', 'verified_at', 'created_at',
     ];

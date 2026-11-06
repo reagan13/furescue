@@ -60,6 +60,7 @@ class ResidentListingService
                 'created_by' => $userId,
             ]);
             $listingId = $this->insertListing($animalId, $userId);
+            $this->recordMinimumHealth($animalId, $userId, $fields);
             if ($ownsTransaction) {
                 $this->pdo->commit();
             }
@@ -116,6 +117,75 @@ class ResidentListingService
         }
 
         return ['listing' => $this->listings->find($listingId) ?? []];
+    }
+
+    public function recordMinimumHealth(string $animalId, string $userId, array $fields): void
+    {
+        $vaccine = trim((string) ($fields['vaccine_name'] ?? ''));
+        $date = trim((string) ($fields['vaccine_date'] ?? ''));
+        $weight = $fields['weight_kg'] ?? null;
+        $heart = $fields['heart_rate_bpm'] ?? null;
+        if ($vaccine === '' && ($weight === null || $weight === '') && ($heart === null || $heart === '')) {
+            return;
+        }
+        if ($date !== '') {
+            $parsed = \DateTime::createFromFormat('Y-m-d', $date);
+            if (!$parsed || $parsed->format('Y-m-d') !== $date) {
+                throw new \InvalidArgumentException('Vaccine date must be YYYY-MM-DD.');
+            }
+        }
+        if ($vaccine !== '' && $date === '') {
+            throw new \InvalidArgumentException('A vaccination needs the date it was given.');
+        }
+
+        $stmt = $this->pdo->prepare(
+            'SELECT id, vaccination_records, vaccination_status FROM animal_medical_records WHERE animal_id = ? LIMIT 1'
+        );
+        $stmt->execute([$animalId]);
+        $existing = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        $records = [];
+        if ($existing && is_string($existing['vaccination_records'] ?? null) && $existing['vaccination_records'] !== '') {
+            $decoded = json_decode($existing['vaccination_records'], true);
+            $records = is_array($decoded) ? $decoded : [];
+        }
+        if ($vaccine !== '') {
+            $records[] = ['name' => $vaccine, 'date_given' => $date, 'status' => 'given'];
+        }
+        $status = (string) ($existing['vaccination_status'] ?? 'none');
+        if ($records !== [] && ($status === '' || $status === 'none')) {
+            $status = 'partial';
+        }
+        $encoded = json_encode(array_values($records), JSON_UNESCAPED_UNICODE);
+        $weightValue = ($weight === null || $weight === '') ? null : $weight;
+        if ($existing) {
+            $update = $this->pdo->prepare(
+                'UPDATE animal_medical_records
+                 SET vaccination_records = ?, vaccination_status = ?, weight_kg = COALESCE(?, weight_kg), updated_by = ?, updated_at = ?
+                 WHERE id = ?'
+            );
+            $update->execute([$encoded, $status, $weightValue, $userId, date('Y-m-d H:i:s'), $existing['id']]);
+        } elseif ($vaccine !== '' || $weightValue !== null) {
+            $insert = $this->pdo->prepare(
+                'INSERT INTO animal_medical_records
+                    (id, animal_id, vaccination_records, vaccination_status, weight_kg, updated_by, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)'
+            );
+            $insert->execute([
+                Database::uuidV4(),
+                $animalId,
+                $encoded,
+                $status,
+                $weightValue,
+                $userId,
+                date('Y-m-d H:i:s'),
+            ]);
+        }
+        if ($heart !== null && $heart !== '') {
+            $vital = $this->pdo->prepare(
+                'INSERT INTO vitals_log (id, animal_id, heart_rate_bpm, source, recorded_at) VALUES (?, ?, ?, ?, ?)'
+            );
+            $vital->execute([Database::uuidV4(), $animalId, (int) $heart, 'manual', date('Y-m-d H:i:s')]);
+        }
     }
 
     public function findLiveListing(string $animalId): ?array

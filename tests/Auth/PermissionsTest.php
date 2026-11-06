@@ -28,7 +28,7 @@ class PermissionsTest extends TestCase
         $this->assertContains('cases.read', $result);
         $this->assertContains('cases.status_change', $result);
         $this->assertContains('animals.read', $result);
-        $this->assertContains('reports.read', $result);
+        $this->assertNotContains('reports.read', $result);
         $this->assertContains('animals.vitals.read', $result);
         $this->assertContains('notifications.read', $result);
         $this->assertContains('elearning.read', $result);

@@ -14,6 +14,8 @@ const state = {
   trends: [],
   updates: [],
   personnel: [],
+  rescue: null,
+  places: [],
 };
 
 const EXPORT_PATHS = {
@@ -73,6 +75,8 @@ async function refreshData() {
   state.trends = (trends && trends.trends) || [];
   state.updates = (updates && updates.updates) || [];
   state.personnel = Array.isArray(personnel) ? personnel : [];
+  state.rescue = stats.rescue_activity || null;
+  state.places = Array.isArray(stats.geographic) ? stats.geographic : [];
   renderAll(state);
   createIcons({ icons });
 }

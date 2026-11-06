@@ -31,6 +31,7 @@ export function emptyEditor() {
     title: "",
     category: "general_care",
     content_body: "",
+    quiz_json: "",
     published_status: "draft",
   };
 }

@@ -24,6 +24,15 @@ $btnOutline = 'inline-flex h-8 items-center justify-center gap-2 whitespace-nowr
         <div class="<?= $cardCls ?> p-4 sm:p-5">
           <?= $sectionTitle('file-text', 'Animal details') ?>
           <div class="mt-3">
+            <label for="report-species" class="<?= $labelCls ?>">Dog or cat <span class="font-normal text-muted-foreground">(required)</span></label>
+            <select id="report-species" name="species" class="<?= $fieldCls ?>" required>
+              <option value="">Choose</option>
+              <option value="dog">Dog</option>
+              <option value="cat">Cat</option>
+            </select>
+            <p data-error-for="species" class="<?= $errorCls ?>"><i data-lucide="alert-circle" class="h-3.5 w-3.5"></i><span>Choose dog or cat.</span></p>
+          </div>
+          <div class="mt-3">
             <label for="animal_description" class="<?= $labelCls ?>">Description <span class="font-normal text-muted-foreground">(required)</span></label>
             <textarea id="animal_description" name="animal_description" rows="6" maxlength="2000" required class="<?= $fieldCls ?> input--area input--area-lg" placeholder="What does the animal look like? Condition, behavior, anything that helps the rescue team."></textarea>
             <div class="mt-1 flex items-center justify-between">

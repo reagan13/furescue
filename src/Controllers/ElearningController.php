@@ -41,7 +41,8 @@ class ElearningController extends AbstractController
             Response::error('FORBIDDEN', 'Module not published', 403);
             return;
         }
-        Response::success(['module' => $this->presentModule($module)]);
+        $withAnswers = in_array('elearning.write', $req->permissions, true);
+        Response::success(['module' => $this->presentModule($module, $withAnswers)]);
     }
 
     public function createModule(Request $req): void
@@ -55,14 +56,23 @@ class ElearningController extends AbstractController
             Response::error('VALIDATION_ERROR', $v->firstError(), 400);
             return;
         }
-        $id = $this->repo('elearning_modules')->create([
+        $row = [
             'id' => Database::uuidV4(),
             'title' => $req->body['title'],
             'category' => $req->body['category'],
             'content_body' => $req->body['content_body'],
             'published_status' => $req->body['published_status'] ?? 'draft',
             'created_by' => $req->user['id'],
-        ]);
+        ];
+        if (array_key_exists('quiz_json', $req->body)) {
+            try {
+                $row['quiz_json'] = \App\Services\ElearningQuiz::store($req->body['quiz_json']);
+            } catch (\InvalidArgumentException $e) {
+                Response::error('VALIDATION_ERROR', $e->getMessage(), 400);
+                return;
+            }
+        }
+        $id = $this->repo('elearning_modules')->create($row);
         Response::success(['module' => $this->repo('elearning_modules')->find($id)], 201);
     }
 
@@ -74,7 +84,7 @@ class ElearningController extends AbstractController
             Response::error('NOT_FOUND', 'Module not found', 404);
             return;
         }
-        $allowed = ['title','category','content_body','published_status'];
+        $allowed = ['title','category','content_body','published_status','quiz_json'];
         $v = new \App\Validation\Validator($req->body);
         if (array_key_exists('title', $req->body)) {
             $v->optional('title')->string('title', 150);
@@ -94,9 +104,19 @@ class ElearningController extends AbstractController
         }
         $data = [];
         foreach ($allowed as $f) {
-            if (array_key_exists($f, $req->body)) {
-                $data[$f] = $req->body[$f];
+            if (!array_key_exists($f, $req->body)) {
+                continue;
             }
+            if ($f === 'quiz_json') {
+                try {
+                    $data[$f] = \App\Services\ElearningQuiz::store($req->body[$f]);
+                } catch (\InvalidArgumentException $e) {
+                    Response::error('VALIDATION_ERROR', $e->getMessage(), 400);
+                    return;
+                }
+                continue;
+            }
+            $data[$f] = $req->body[$f];
         }
         if (empty($data)) {
             Response::error('VALIDATION_ERROR', 'No fields provided', 400);
@@ -230,12 +250,15 @@ class ElearningController extends AbstractController
      * @param array<string,mixed> $module
      * @return array<string,mixed>
      */
-    private function presentModule(array $module): array
+    private function presentModule(array $module, bool $withAnswers = false): array
     {
         $quiz = \App\Services\ElearningQuiz::decode($module['quiz_json'] ?? null);
         unset($module['quiz_json']);
         $module['has_quiz'] = $quiz !== [];
         $module['quiz'] = \App\Services\ElearningQuiz::publicQuestions($quiz);
+        if ($withAnswers) {
+            $module['quiz_json'] = $quiz;
+        }
 
         return $module;
     }

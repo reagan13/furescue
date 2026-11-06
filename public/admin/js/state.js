@@ -67,7 +67,7 @@ export async function loadDashboard() {
       safe(api.fetchUnreadCount(), 0),
       safe(api.fetchElearning(), null),
       safe(api.fetchAdoptionTrends(), []),
-      safe(api.fetchHeatmap("all"), []),
+      safe(api.fetchHeatmap("verified"), []),
       safe(api.fetchHealthUpdates(), []),
       safe(api.fetchHealthRecords(), []),
     ]);

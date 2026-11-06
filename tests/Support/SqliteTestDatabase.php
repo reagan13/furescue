@@ -63,6 +63,7 @@ final class SqliteTestDatabase
                 id TEXT PRIMARY KEY,
                 resident_id TEXT NOT NULL,
                 animal_description TEXT NOT NULL,
+                species TEXT,
                 photo_urls TEXT,
                 latitude TEXT NOT NULL,
                 longitude TEXT NOT NULL,

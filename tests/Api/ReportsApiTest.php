@@ -313,4 +313,45 @@ class ReportsApiTest extends ApiTestCase
     {
         $this->assertError($this->get('/api/v1/reports/map/heatmap'), 'UNAUTHENTICATED', 401);
     }
+
+    public function testResidentCannotOpenTheHeatmap(): void
+    {
+        $resident = $this->seedResident();
+        $this->assertError(
+            $this->get('/api/v1/reports/map/heatmap', [], $this->actingAs($resident)),
+            'FORBIDDEN',
+            403
+        );
+    }
+
+    public function testRescuerDoesNotReceiveEveryReport(): void
+    {
+        $rescuer = $this->seedRescuer();
+        $resident = $this->seedResident();
+        $this->seedReport(['resident_id' => $resident['id']]);
+        $data = $this->assertOk($this->get('/api/v1/reports', [], $this->actingAs($rescuer)));
+        $this->assertSame([], $data);
+    }
+
+    public function testReportStoresDogOrCat(): void
+    {
+        $resident = $this->seedResident();
+        $data = $this->assertOk($this->post('/api/v1/reports', $this->reportBody([
+            'species' => 'cat',
+        ]), $this->actingAs($resident)), 201);
+        $this->assertSame('cat', $data['report']['species']);
+    }
+
+    public function testWithdrawRemovesAnUnfinishedReport(): void
+    {
+        $resident = $this->seedResident();
+        $created = $this->assertOk($this->post('/api/v1/reports', $this->reportBody(), $this->actingAs($resident)), 201);
+        $id = $created['report']['id'];
+        $this->assertOk($this->post('/api/v1/reports/' . $id . '/withdraw', [], $this->actingAs($resident)));
+        $this->assertError(
+            $this->get('/api/v1/reports/' . $id, [], $this->actingAs($resident)),
+            'NOT_FOUND',
+            404
+        );
+    }
 }

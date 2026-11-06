@@ -14,6 +14,7 @@ export function Editor() {
   const isNew = !m.id;
   const title = m.title || "";
   const body = m.content_body || "";
+  const quiz = Array.isArray(m.quiz_json) ? JSON.stringify(m.quiz_json, null, 2) : m.quiz_json || "";
   const status = m.published_status === "published" ? "published" : "draft";
   const published = status === "published";
   const toggle = isNew
@@ -75,6 +76,11 @@ export function Editor() {
           <textarea id="elearn-body" name="content_body" class="input input--area" rows="16" maxlength="20000" required placeholder="<p>Lesson HTML…</p>">${esc(body)}</textarea>
           <span class="field-hint"><span id="elearn-body-count">${body.length}</span>/20000 characters. HTML is allowed — residents render this as the lesson.</span>
         </div>
+        <div class="field elearn-field--full">
+          <label for="elearn-quiz" class="field-label">Quiz JSON</label>
+          <textarea id="elearn-quiz" name="quiz_json" class="input input--area" rows="8" placeholder='[{"q":"Question","options":["A","B"],"a":0}]'>${esc(quiz)}</textarea>
+          <p class="field-hint">A list of questions. Each one has q, options, and a (the correct option index). Leave blank for no quiz.</p>
+        </div>
       </div>
       <div class="elearn-form-actions">
         ${Button({ text: isNew ? "Create module" : "Save changes", variant: "default", icon: "save", attrs: 'data-action="save"' })}
@@ -90,10 +96,12 @@ export function readEditorForm() {
   const catEl = document.getElementById("elearn-category");
   const statusEl = document.getElementById("elearn-status");
   const bodyEl = document.getElementById("elearn-body");
+  const quizEl = document.getElementById("elearn-quiz");
   return {
     title: titleEl ? titleEl.value.trim() : "",
     category: catEl ? catEl.value : "general_care",
     published_status: statusEl && statusEl.value === "published" ? "published" : "draft",
     content_body: bodyEl ? bodyEl.value : "",
+    quiz_json: quizEl ? quizEl.value.trim() : "",
   };
 }

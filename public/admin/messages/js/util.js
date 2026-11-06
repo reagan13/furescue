@@ -79,8 +79,18 @@ export function buildComposeTargets({ adoptions = [], reports = [], cases = [], 
       related_id: String(row.id),
       receiver_id: receiverId,
       name: "Reporter",
-      label: `Case ${shortId(row.id)} · ${place}`,
+      label: `Reporter · Case ${shortId(row.id)} · ${place}`,
     });
+    const rescuerId = String(row.assigned_rescuer_id || "");
+    if (rescuerId && rescuerId !== me) {
+      caseTargets.push({
+        related_type: "case",
+        related_id: String(row.id),
+        receiver_id: rescuerId,
+        name: row.assigned_rescuer_name || "Rescuer",
+        label: `Rescuer ${row.assigned_rescuer_name || ""} · Case ${shortId(row.id)}`.trim(),
+      });
+    }
   }
 
   return { adoption, report, case: caseTargets };

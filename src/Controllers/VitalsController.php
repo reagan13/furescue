@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Database;
 use App\Http\Request;
 use App\Http\Response;
+use App\Services\AnimalAccess;
 
 class VitalsController extends AbstractController
 {
@@ -43,6 +44,15 @@ class VitalsController extends AbstractController
             Response::error('NOT_FOUND', 'Animal not found', 404);
             return;
         }
+        if (!(new AnimalAccess($this->pdo))->canWriteVitals(
+            $req->user,
+            $req->permissions,
+            (string) $req->params['id'],
+            $animal['case_id'] ?? null
+        )) {
+            Response::error('FORBIDDEN', 'Not allowed to record vitals for this animal', 403);
+            return;
+        }
         $v = new \App\Validation\Validator($req->body);
         $v->required('heart_rate_bpm')->numeric('heart_rate_bpm')->min('heart_rate_bpm', 1)
             ->optional('respiratory_rate_bpm')->numeric('respiratory_rate_bpm');
@@ -71,6 +81,12 @@ class VitalsController extends AbstractController
         $animal = $this->repo('animals')->find($req->params['id']);
         if (!$animal) {
             Response::error('NOT_FOUND', 'Animal not found', 404);
+            return;
+        }
+        $access = new AnimalAccess($this->pdo);
+        if (!$access->canReadMedical($req->user, $req->permissions, (string) $req->params['id'], $animal['case_id'] ?? null)
+            && !$access->canWriteVitals($req->user, $req->permissions, (string) $req->params['id'], $animal['case_id'] ?? null)) {
+            Response::error('FORBIDDEN', 'Not allowed to read vitals for this animal', 403);
             return;
         }
         $result = $this->repo('vitals_log')->paginate(

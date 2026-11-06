@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Database;
 use App\Http\Request;
 use App\Http\Response;
+use App\Services\AnimalAccess;
 
 class AnimalMedicalController extends AbstractController
 {
@@ -13,6 +14,15 @@ class AnimalMedicalController extends AbstractController
         $animal = $this->repo('animals')->find($req->params['id']);
         if (!$animal) {
             Response::error('NOT_FOUND', 'Animal not found', 404);
+            return;
+        }
+        if (!(new AnimalAccess($this->pdo))->canReadMedical(
+            $req->user,
+            $req->permissions,
+            (string) $req->params['id'],
+            $animal['case_id'] ?? null
+        )) {
+            Response::error('FORBIDDEN', 'Not allowed to read this medical record', 403);
             return;
         }
         $record = $this->repo('animal_medical_records')->findBy('animal_id', $req->params['id']);

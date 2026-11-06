@@ -11,8 +11,10 @@ test.describe('rescuer portal', () => {
     const detailLink = page.locator('a[href*="cases/detail.php"]').first();
     if (await detailLink.count()) {
       await detailLink.click();
+      await page.waitForLoadState('networkidle');
       await expect(page).toHaveURL(/cases\/detail\.php/);
-      await expect(page.locator('body')).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Animal health' })).toBeVisible();
+      await expect(page.locator('#case-pin-map')).toBeVisible();
     }
 
     await page.goto('/cases/');
@@ -32,9 +34,14 @@ test.describe('rescuer portal', () => {
     await expect(page.locator('.rpage-title')).toContainText('Account');
   });
 
-  test('mobile cases list loads', async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 812 });
+  test('cases list at phone, tablet, and desktop widths', async ({ page }) => {
     await openAs(page, accounts.rescuer, '/cases/');
-    await expect(page.locator('.rpage-title')).toContainText('My Cases');
+    for (const width of [375, 768, 1440]) {
+      await page.setViewportSize({ width, height: width === 1440 ? 900 : 812 });
+      await page.goto('/cases/');
+      await expect(page.locator('.rpage-title')).toContainText('My Cases');
+      const box = await page.locator('body').boundingBox();
+      expect(box?.width ?? width).toBeLessThanOrEqual(width);
+    }
   });
 });

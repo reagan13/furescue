@@ -76,7 +76,11 @@ function renderThreads() {
       <div class="rempty">
         <i data-lucide="inbox"></i>
         <p class="rempty-title">No conversations yet</p>
-        <p class="rempty-text">Start a conversation with City Vet about a report or adoption — tap New message.</p>
+        <p class="rempty-text">${esc(
+          (window.__PAGE_STATE__ && window.__PAGE_STATE__.user && window.__PAGE_STATE__.user.role) === "rescuer"
+            ? "When a case is assigned to you, message that resident or City Vet."
+            : "Message the assigned rescuer or City Vet about a report or adoption — tap New message."
+        )}</p>
       </div>`;
     createIcons({ icons });
     syncInboxLayout();

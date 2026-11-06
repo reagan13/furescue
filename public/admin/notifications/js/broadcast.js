@@ -62,6 +62,9 @@ function rowHtml(broadcast) {
       <td class="table-cell table-cell--strong">${esc(broadcast.message)}</td>
       <td class="table-cell"><span class="stamp stamp--sm stamp--accent">${recipients} sent</span></td>
       <td class="table-cell table-cell--mono table-cell--muted">${esc(timeAgo(broadcast.created_at))}</td>
+      <td class="table-cell table-cell--right">
+        <button type="button" class="btn btn--ghost btn--sm" data-broadcast-delete="${esc(broadcast.id || "")}">Remove</button>
+      </td>
     </tr>`;
 }
 
@@ -76,12 +79,33 @@ function renderBroadcasts(items) {
     list.className = "table-wrap";
     list.innerHTML = `
       <table class="table">
-        <thead><tr class="table-head"><th>Message</th><th>Recipients</th><th>Sent</th></tr></thead>
+        <thead><tr class="table-head"><th>Message</th><th>Recipients</th><th>Sent</th><th></th></tr></thead>
         <tbody id="broadcast-rows">${items.map(rowHtml).join("")}</tbody>
       </table>`;
   }
   if (totalEl) totalEl.textContent = String(items.length);
   createIcons({ icons });
+  list.querySelectorAll("[data-broadcast-delete]").forEach((button) => {
+    button.addEventListener("click", () => removeBroadcast(button.dataset.broadcastDelete));
+  });
+}
+
+async function removeBroadcast(id) {
+  if (!id) return;
+  const ok = await confirmDialog({
+    title: "Remove this announcement?",
+    message: "This hides the announcement from every inbox that received it.",
+    confirmText: "Remove",
+    danger: true,
+  });
+  if (!ok) return;
+  try {
+    await apiFetchFull(`/admin/notifications/${encodeURIComponent(id)}`, { method: "DELETE" });
+    toast("Announcement removed.", { type: "success" });
+    await refreshBroadcasts();
+  } catch (err) {
+    toast(err.message || "Could not remove the announcement.", { type: "error" });
+  }
 }
 
 async function refreshBroadcasts() {

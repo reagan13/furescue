@@ -112,7 +112,7 @@ class NotificationService
     public function recentBroadcasts(int $limit = 20): array
     {
         $stmt = $this->pdo->prepare(
-            "SELECT message, type, COUNT(*) AS recipients, MIN(created_at) AS created_at
+            "SELECT MIN(id) AS id, message, type, COUNT(*) AS recipients, MIN(created_at) AS created_at
              FROM notifications
              WHERE type = 'admin_announcement'
              GROUP BY message, type

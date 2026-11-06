@@ -47,7 +47,8 @@ class ReportController extends AbstractController
             ->required('latitude')->latitude('latitude')
             ->required('longitude')->longitude('longitude')
             ->optional('address_text')->string('address_text', 500)
-            ->optional('photo_urls')->stringOrStringList('photo_urls', 4000);
+            ->optional('photo_urls')->stringOrStringList('photo_urls', 4000)
+            ->optional('species')->in('species', ['dog', 'cat']);
         if (!$v->passes()) {
             Response::error('VALIDATION_ERROR', $v->firstError(), 400);
             return;
@@ -70,7 +71,7 @@ class ReportController extends AbstractController
 
         $validationStatus = $duplicateId ? 'flagged_duplicate' : 'validated';
 
-        $id = $this->reports->create([
+        $row = [
             'id' => Database::uuidV4(),
             'resident_id' => $req->user['id'],
             'animal_description' => $req->body['animal_description'],
@@ -82,7 +83,11 @@ class ReportController extends AbstractController
             'duplicate_of_report_id' => $duplicateId,
             'validation_status' => $validationStatus,
             'status' => 'pending_verification',
-        ]);
+        ];
+        if (!empty($req->body['species'])) {
+            $row['species'] = $req->body['species'];
+        }
+        $id = $this->reports->create($row);
 
         $this->notifyRole('admin', 'report_submitted', 'A new animal report was submitted.', 'report', $id);
 
@@ -133,7 +138,7 @@ class ReportController extends AbstractController
             Response::error('NOT_FOUND', 'Report not found', 404);
             return;
         }
-        if (!in_array('reports.read', $req->permissions, true) && $report->residentId() !== $req->user['id']) {
+        if (!$this->canReadReport($req, $report)) {
             Response::error('FORBIDDEN', 'Not your report', 403);
             return;
         }
@@ -210,7 +215,7 @@ class ReportController extends AbstractController
             Response::error('NOT_FOUND', 'Report not found', 404);
             return;
         }
-        if (!in_array('reports.read', $req->permissions, true) && $report->residentId() !== $req->user['id']) {
+        if (!$this->canReadReport($req, $report)) {
             Response::error('FORBIDDEN', 'Not your report', 403);
             return;
         }
@@ -317,6 +322,50 @@ class ReportController extends AbstractController
             ];
         }
         return $out;
+    }
+
+    public function withdraw(Request $req): void
+    {
+        $report = $this->reports->find($req->params['id']);
+        if (!$report) {
+            Response::error('NOT_FOUND', 'Report not found', 404);
+            return;
+        }
+        if ($report->residentId() !== ($req->user['id'] ?? null)) {
+            Response::error('FORBIDDEN', 'Not your report', 403);
+            return;
+        }
+        if ($report->status() !== 'pending_verification') {
+            Response::error('INVALID_STATE', 'Only a report that is still waiting for verification can be withdrawn.', 409);
+            return;
+        }
+        if ($this->cases->findByReportId($report->id())) {
+            Response::error('INVALID_STATE', 'This report already has a case.', 409);
+            return;
+        }
+        $this->pdo->prepare('DELETE FROM notifications WHERE related_type = ? AND related_id = ?')
+            ->execute(['report', $report->id()]);
+        $this->pdo->prepare('DELETE FROM reports WHERE id = ?')->execute([$report->id()]);
+        Response::success(['withdrawn' => true]);
+    }
+
+    private function canReadReport(Request $req, \App\Entity\Report $report): bool
+    {
+        if (in_array('reports.read', $req->permissions, true)) {
+            return true;
+        }
+        if ($report->residentId() === ($req->user['id'] ?? null)) {
+            return true;
+        }
+        if (($req->user['role'] ?? '') !== 'rescuer' || $report->id() === null) {
+            return false;
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT 1 FROM cases WHERE report_id = ? AND assigned_rescuer_id = ? LIMIT 1'
+        );
+        $stmt->execute([$report->id(), $req->user['id']]);
+
+        return (bool) $stmt->fetchColumn();
     }
 
     public function heatmap(Request $req): void

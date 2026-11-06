@@ -86,9 +86,40 @@ export function renderPersonnel(rows) {
     </table>`;
 }
 
+export function renderRescue(activity) {
+  const el = document.getElementById("rescue-activity");
+  if (!el || !activity) return;
+  const verified = Number(activity.verified_reports) || 0;
+  const resolved = Number(activity.resolved_cases) || 0;
+  const rate = activity.rescue_rate == null ? "" : ` (${Math.round(Number(activity.rescue_rate) * 1000) / 10}%)`;
+  const hours =
+    activity.avg_hours_to_resolve == null
+      ? "not enough resolved cases yet"
+      : `${activity.avg_hours_to_resolve} hours`;
+  el.innerHTML = `<p>Resolved cases ${esc(resolved)} of ${esc(verified)} verified reports${esc(rate)}.</p><p class="field-hint">Average time from assign to resolve: ${esc(hours)}.</p>`;
+}
+
+export function renderPlaces(rows) {
+  const el = document.getElementById("geo-summary");
+  if (!el) return;
+  const list = Array.isArray(rows) ? rows : [];
+  if (!list.length) {
+    el.innerHTML = emptyState("map-pin", "No verified pins in this range.");
+    return;
+  }
+  el.innerHTML = `<div class="table-wrap"><table class="table"><thead><tr class="table-head"><th>Place</th><th class="table-cell--right">Verified reports</th></tr></thead><tbody>${list
+    .map(
+      (row) =>
+        `<tr><td class="table-cell">${esc(row.place || "")}</td><td class="table-cell table-cell--right">${esc(row.reports ?? 0)}</td></tr>`
+    )
+    .join("")}</tbody></table></div>`;
+}
+
 export function renderAll(state) {
   renderOverview(state.overview);
   renderTrends(state.trends);
   renderUpdates(state.updates);
   renderPersonnel(state.personnel || []);
+  renderRescue(state.rescue);
+  renderPlaces(state.places);
 }

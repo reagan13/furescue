@@ -200,6 +200,14 @@ class NotificationController extends AbstractController
             Response::error('FORBIDDEN', 'Not allowed to delete this notification', 403);
             return;
         }
+        if (($note['type'] ?? '') === 'admin_announcement' && in_array('notifications.delete', $req->permissions, true)) {
+            $stmt = $this->pdo->prepare(
+                "DELETE FROM notifications WHERE type = 'admin_announcement' AND message = ?"
+            );
+            $stmt->execute([(string) ($note['message'] ?? '')]);
+            Response::success(null, 204);
+            return;
+        }
         $repo->delete($note['id']);
         Response::success(null, 204);
     }

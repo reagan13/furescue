@@ -62,7 +62,7 @@ export function initAnimalsEvents() {
       if (animal) {
         const ok = await confirmDialog({
           title: "Delete this animal?",
-          message: `Delete "${animal.name}"? This is a soft delete and can be restored by an admin.`,
+          message: `Hide "${animal.name}"? The record stays in the database and no longer appears in the shelter list.`,
           confirmText: "Delete",
           cancelText: "Cancel",
           danger: true,

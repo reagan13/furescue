@@ -10,7 +10,8 @@ class AnimalsApiTest extends ApiTestCase
     public function testListAnimalsReturnsMeta(): void
     {
         $resident = $this->seedResident();
-        $this->seedAnimal();
+        $this->seedAnimal(['adoption_status' => 'available']);
+        $this->seedAnimal(['adoption_status' => 'not_listed']);
         $response = $this->get('/api/v1/animals', [], $this->actingAs($resident));
         $this->assertOk($response);
         $this->assertSame(1, $response['body']['meta']['total']);
@@ -69,10 +70,13 @@ class AnimalsApiTest extends ApiTestCase
     public function testShowAnimalIncludesMedical(): void
     {
         $resident = $this->seedResident();
-        $animal = $this->seedEligibleAnimal();
+        $animal = $this->seedEligibleAnimal(['adoption_status' => 'available']);
         $data = $this->assertOk($this->get('/api/v1/animals/' . $animal['id'], [], $this->actingAs($resident)));
         $this->assertSame($animal['id'], $data['animal']['id']);
-        $this->assertArrayHasKey('medical', $data['animal']);
+        $this->assertArrayNotHasKey('medical', $data['animal']);
+        $admin = $this->seedAdmin();
+        $adminView = $this->assertOk($this->get('/api/v1/animals/' . $animal['id'], [], $this->actingAs($admin)));
+        $this->assertArrayHasKey('medical', $adminView['animal']);
     }
 
     public function testResidentCannotCreateAnimal(): void
@@ -263,11 +267,15 @@ class AnimalsApiTest extends ApiTestCase
         ), 'FORBIDDEN', 403);
     }
 
-    public function testResidentCanReadMedical(): void
+    public function testResidentCannotReadMedical(): void
     {
         $resident = $this->seedResident();
-        $animal = $this->seedEligibleAnimal();
-        $this->assertOk($this->get('/api/v1/animals/' . $animal['id'] . '/medical', [], $this->actingAs($resident)));
+        $animal = $this->seedEligibleAnimal(['adoption_status' => 'available']);
+        $this->assertError(
+            $this->get('/api/v1/animals/' . $animal['id'] . '/medical', [], $this->actingAs($resident)),
+            'FORBIDDEN',
+            403
+        );
     }
 
     public function testMedicalShowUnknownAnimal(): void

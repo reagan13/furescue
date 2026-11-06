@@ -1,7 +1,7 @@
 <div class="rpage-head">
   <div>
     <h2 class="rpage-title">Notifications</h2>
-    <p class="rpage-sub">Updates about your reports, adoptions, messages, and announcements.</p>
+    <p class="rpage-sub">Updates about your reports, adoptions, messages, and announcements. This inbox refreshes when you open it. The built-in PHP server cannot hold a live stream, so a new alert is not a push.</p>
   </div>
   <div class="rpage-actions">
     <button type="button" class="rbtn rbtn--ghost rbtn--sm" id="notif-mark-all">

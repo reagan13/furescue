@@ -4,6 +4,17 @@
    Case detail page
    ============================================================ */
 
+.case-pin-map.map-canvas--leaflet {
+  height: 220px;
+  width: 100%;
+  max-width: 100%;
+}
+@media (min-width: 768px) {
+  .case-pin-map.map-canvas--leaflet {
+    height: 280px;
+  }
+}
+
 .case-detail-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);

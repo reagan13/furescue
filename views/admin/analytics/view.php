@@ -114,7 +114,42 @@ $btnHealth = button_html('Export Health CSV', 'outline', icon: 'download', attrs
 
   <div class="panel">
     <div class="panel-head">
-      <div class="panel-title-wrap"><i data-lucide="heart-pulse"></i><h2 class="panel-title panel-title--sm">Health updates</h2></div>
+      <div class="panel-title-wrap"><i data-lucide="activity"></i><h2 class="panel-title panel-title--sm">Rescue activity</h2></div>
+    </div>
+    <div id="rescue-activity" class="panel-pad">
+      <p>Resolved cases <?= e((string) ($rescue['resolved_cases'] ?? 0)) ?> of <?= e((string) ($rescue['verified_reports'] ?? 0)) ?> verified reports<?php if (isset($rescue['rescue_rate'])): ?> (<?= e((string) round(((float) $rescue['rescue_rate']) * 100, 1)) ?>%)<?php endif; ?>.</p>
+      <p class="field-hint">Average time from assign to resolve: <?= isset($rescue['avg_hours_to_resolve']) ? e((string) $rescue['avg_hours_to_resolve']) . ' hours' : 'not enough resolved cases yet' ?>.</p>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <div class="panel-title-wrap"><i data-lucide="map"></i><h2 class="panel-title panel-title--sm">Where verified reports were pinned</h2></div>
+    </div>
+    <div id="geo-summary">
+<?php if (($places ?? []) === []): ?>
+      <div class="queue-empty"><?= empty_state('map-pin', 'No verified pins in this range.') ?></div>
+<?php else: ?>
+      <div class="table-wrap">
+        <table class="table">
+          <?= table_head(['Place', 'Verified reports']) ?>
+          <tbody>
+<?php foreach ($places as $place): ?>
+            <tr>
+              <td class="table-cell"><?= e($place['place'] ?? '') ?></td>
+              <td class="table-cell table-cell--right"><?= e($place['reports'] ?? 0) ?></td>
+            </tr>
+<?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
+<?php endif; ?>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <div class="panel-title-wrap"><i data-lucide="heart-pulse"></i><h2 class="panel-title panel-title--sm">Health records</h2></div>
       <a href="#" class="btn-link" data-export="health-updates">Download CSV <?= chevron_right() ?></a>
     </div>
 <?php if ($updates === []): ?>

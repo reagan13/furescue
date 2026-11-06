@@ -7,6 +7,7 @@ class Report
     private ?string $id;
     private ?string $residentId;
     private ?string $animalDescription;
+    private ?string $species;
     private ?string $photoUrls;
     private ?string $latitude;
     private ?string $longitude;
@@ -30,6 +31,7 @@ class Report
         $report->id = $row['id'] ?? null;
         $report->residentId = $row['resident_id'] ?? null;
         $report->animalDescription = $row['animal_description'] ?? null;
+        $report->species = $row['species'] ?? null;
         $report->photoUrls = $row['photo_urls'] ?? null;
         $report->latitude = $row['latitude'] ?? null;
         $report->longitude = $row['longitude'] ?? null;
@@ -58,6 +60,11 @@ class Report
     public function animalDescription(): ?string
     {
         return $this->animalDescription;
+    }
+
+    public function species(): ?string
+    {
+        return $this->species;
     }
 
     public function photoUrls(): ?string
@@ -126,6 +133,7 @@ class Report
             'id' => $this->id,
             'resident_id' => $this->residentId,
             'animal_description' => $this->animalDescription,
+            'species' => $this->species,
             'photo_urls' => $this->photoUrls,
             'latitude' => $this->latitude,
             'longitude' => $this->longitude,

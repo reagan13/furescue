@@ -54,6 +54,7 @@ test('walks report to admin resolve with mocked location and fixture files', asy
     await expectSignedInAt(resident, '/reports/');
     await resident.goto('/report/');
     await resident.locator('.leaflet-container').waitFor({ timeout: 20_000 });
+    await resident.locator('#report-species').selectOption('dog');
     await resident.locator('#animal_description').fill(description);
     await resident.locator('#report-photos').setInputFiles(PROOF);
     await resident.locator('#address_text').fill(address);

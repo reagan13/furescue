@@ -2,8 +2,10 @@ import { createIcons, icons } from "lucide";
 import { hasPageSession, requireAuth, redirectToLogin } from "/assets/js/lib/api.js";
 import { bootstrapPageAuth } from "/assets/js/lib/page-auth.js";
 import { initResidentShell } from "/assets/js/components/resident-shell.js";
+import { mountPinMap } from "/assets/js/lib/leaflet.js";
 import { fetchCase } from "./api.js";
 import { bindCaseActions } from "./actions.js";
+import { bindCaseHealth } from "./health.js";
 import { bindProofForm } from "./proof.js";
 import { renderDetail, renderDetailError, renderDetailLoading } from "./detail-render.js";
 
@@ -29,6 +31,18 @@ function bindInteractive(item) {
     caseId: item.id,
     onUploaded: () => loadCase(),
   });
+  bindCaseHealth(root, {
+    caseId: item.id,
+    onSaved: () => loadCase(),
+  });
+  const mapEl = document.getElementById("case-pin-map");
+  if (mapEl) {
+    const lat = Number(mapEl.dataset.lat);
+    const lng = Number(mapEl.dataset.lng);
+    void mountPinMap(mapEl, lat, lng, {
+      popup: item.address_text || "Assigned report",
+    });
+  }
 }
 
 async function loadCase() {

@@ -1,5 +1,5 @@
 import { createIcons, icons } from "lucide";
-import { requireAuth, apiFetchFull, apiUpload, redirectToLogin } from "/assets/js/lib/api.js";
+import { requireAuth, apiFetch, apiFetchFull, apiUpload, redirectToLogin } from "/assets/js/lib/api.js";
 import { bootstrapPageAuth } from "/assets/js/lib/page-auth.js";
 import { toast } from "/shared/components/toast/toast.js";
 import { confirmDialog } from "/shared/components/dialog/dialog.js";
@@ -62,14 +62,20 @@ async function handleSubmit(e) {
   bootstrapPageAuth();
 
   const description = el("animal_description").value.trim();
+  const species = el("report-species")?.value || "";
   const pin = getLatLng();
   const addressText = (el("address_text")?.value || "").trim();
   let valid = true;
 
   clearError("animal_description");
+  clearError("species");
   clearError("photos");
   clearError("location");
 
+  if (species !== "dog" && species !== "cat") {
+    showError("species", "Choose dog or cat.");
+    valid = false;
+  }
   if (!description) {
     showError("animal_description");
     valid = false;
@@ -104,6 +110,7 @@ async function handleSubmit(e) {
       method: "POST",
       body: {
         animal_description: description,
+        species,
         latitude: pin.lat,
         longitude: pin.lng,
         ...(addressText ? { address_text: addressText } : {}),
@@ -118,10 +125,16 @@ async function handleSubmit(e) {
     try {
       await uploadPhotos(report.id);
     } catch (uploadErr) {
-      toast(`Report created, but some photos failed to upload: ${uploadErr.message}`, {
-        type: "error",
-        duration: 6000,
-      });
+      try {
+        await apiFetch(`/reports/${encodeURIComponent(report.id)}/withdraw`, { method: "POST", body: {} });
+      } catch {
+        /* the report may already be gone */
+      }
+      submit.disabled = false;
+      if (label) label.textContent = "Submit report";
+      toast("The report was not finished because the files did not upload.", { type: "error", duration: 6000 });
+      showError("photos", uploadErr.message || "The files did not upload. The report was not saved.");
+      return;
     }
 
     sessionStorage.setItem(

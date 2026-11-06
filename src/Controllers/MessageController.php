@@ -5,67 +5,19 @@ namespace App\Controllers;
 use App\Database;
 use App\Http\Request;
 use App\Http\Response;
+use App\Services\MessageAudience;
 use App\Services\NotificationService;
 
 class MessageController extends AbstractController
 {
     public function composeTargets(Request $req): void
     {
-        $me = (string) $req->user['id'];
-        $receiver = $this->staffReceiver($me);
-        if ($receiver === null) {
+        $pack = (new MessageAudience($this->pdo))->compose($req->user);
+        if ($pack['receiver'] === null) {
             Response::error('NO_STAFF', 'No City Veterinary Office account is available to message yet.', 422);
             return;
         }
-
-        $topics = [];
-        $reportStmt = $this->pdo->prepare(
-            'SELECT id, animal_description, created_at FROM reports WHERE resident_id = ? ORDER BY created_at DESC LIMIT 50'
-        );
-        $reportStmt->execute([$me]);
-        foreach ($reportStmt->fetchAll(\PDO::FETCH_ASSOC) as $row) {
-            $label = trim((string) ($row['animal_description'] ?? ''));
-            $topics[] = [
-                'related_type' => 'report',
-                'related_id' => $row['id'],
-                'label' => 'Report · ' . ($label !== '' ? mb_substr($label, 0, 80) : 'your report'),
-            ];
-        }
-
-        $adoptStmt = $this->pdo->prepare(
-            'SELECT a.id, an.name FROM adoptions a
-             LEFT JOIN animals an ON an.id = a.animal_id
-             WHERE a.applicant_id = ? AND a.status <> \'cancelled\'
-             ORDER BY a.created_at DESC LIMIT 50'
-        );
-        $adoptStmt->execute([$me]);
-        foreach ($adoptStmt->fetchAll(\PDO::FETCH_ASSOC) as $row) {
-            $name = trim((string) ($row['name'] ?? ''));
-            $topics[] = [
-                'related_type' => 'adoption',
-                'related_id' => $row['id'],
-                'label' => 'Adoption · ' . ($name !== '' ? $name : 'your application'),
-            ];
-        }
-
-        if (in_array('cases.read', $req->permissions, true) || in_array('cases.respond', $req->permissions, true)) {
-            $caseStmt = $this->pdo->prepare(
-                'SELECT id FROM cases WHERE assigned_rescuer_id = ? ORDER BY created_at DESC LIMIT 50'
-            );
-            $caseStmt->execute([$me]);
-            foreach ($caseStmt->fetchAll(\PDO::FETCH_ASSOC) as $row) {
-                $topics[] = [
-                    'related_type' => 'case',
-                    'related_id' => $row['id'],
-                    'label' => 'Case · assigned to you',
-                ];
-            }
-        }
-
-        Response::success([
-            'receiver' => $receiver,
-            'topics' => $topics,
-        ]);
+        Response::success($pack);
     }
 
     public function threads(Request $req): void
@@ -144,6 +96,15 @@ class MessageController extends AbstractController
         if (!$this->assertRelatedAccess($req, $req->body['related_type'], $req->body['related_id'])) {
             return;
         }
+        if (!(new MessageAudience($this->pdo))->allows(
+            $req->user,
+            (string) $req->body['related_type'],
+            (string) $req->body['related_id'],
+            (string) $req->body['receiver_id']
+        )) {
+            Response::error('INVALID_RECEIVER', 'You can only message the people tied to this record.', 422);
+            return;
+        }
         $id = $this->repo('messages')->create([
             'id' => Database::uuidV4(),
             'sender_id' => $req->user['id'],
@@ -217,7 +178,9 @@ class MessageController extends AbstractController
             $isAssignee = ($case['assigned_rescuer_id'] ?? null) === ($req->user['id'] ?? null);
             $canRead = in_array('cases.read', $req->permissions, true)
                 || in_array('cases.assign', $req->permissions, true);
-            if (!$isAssignee && !$canRead) {
+            $report = $this->repo('reports')->find((string) ($case['report_id'] ?? ''));
+            $isResident = ($report['resident_id'] ?? null) === ($req->user['id'] ?? null);
+            if (!$isAssignee && !$canRead && !$isResident) {
                 Response::error('FORBIDDEN', 'Not allowed to message about this case', 403);
                 return false;
             }
@@ -234,28 +197,5 @@ class MessageController extends AbstractController
             return false;
         }
         return true;
-    }
-
-    /**
-     * @return array{id:string,full_name:string}|null
-     */
-    private function staffReceiver(string $exceptUserId): ?array
-    {
-        $stmt = $this->pdo->prepare(
-            "SELECT id, full_name FROM users
-             WHERE role = 'admin' AND account_status = 'active' AND id <> ?
-             ORDER BY created_at ASC, id ASC
-             LIMIT 1"
-        );
-        $stmt->execute([$exceptUserId]);
-        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
-        if (!$row) {
-            return null;
-        }
-
-        return [
-            'id' => (string) $row['id'],
-            'full_name' => (string) ($row['full_name'] ?? 'City Veterinary Office'),
-        ];
     }
 }

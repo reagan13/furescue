@@ -78,6 +78,18 @@ npm run build:lucide                         :: rebuild local Lucide subset afte
 - Geovalidation clamps reports to the Mati City bounding box env vars; report dedup tuning lives in `DEDUP_*` env vars.
 - `dbtool/index.php` is a standalone dev SQL viewer, not wired into the app.
 
+## Validation questionnaire
+
+Before changing a survey statement, a study objective, or a row in `docs/study/VALIDATION-GAPS.md`, follow `.cursor/skills/furescue-thesis-qa/SKILL.md`. Website checks use `.cursor/skills/webapp-testing/SKILL.md` (Apache 2.0, copied from anthropics/skills). Do not start a second server. A phone row stays unfinished when no physical phone is attached for `flutter test integration_test`.
+
+The user survey is a second product checklist beside `docs/study/OBJECTIVES.md` and `docs/study/REQUIREMENTS_SPECIFICATION.md`. A flow that meets an objective still leaves a gap when the matching statement cannot be done by that role.
+
+- Original form: `docs/study/FURESCUE-QUESTIONNAIRE.docx`
+- Statement IDs: `docs/study/FURESCUE-VALIDATION-QUESTIONS.md`
+- Open work: `docs/study/VALIDATION-GAPS.md`
+
+Read the gap list before changing resident, rescuer, or admin behavior. Do not tell the team a statement will score high while its row is `missing`, `unfinished`, or `rater-only`.
+
 ## Docs caveat
 
 `docs/technical/ARCHITECTURE_AUDIT.md` still describes the pre-refactor `backend/` + `frontend/` tree and `.html` URLs. Code now lives at the repo root (`src/`, `public/`, etc.) and pages are `.php`. Trust the code over that audit. Onboarding for humans is `README.md` + `docs/technical/HOW_TO_RUN.md`.

@@ -39,6 +39,65 @@ function actionBar(item) {
   return "";
 }
 
+function pinMap(item) {
+  const lat = Number(item.latitude);
+  const lng = Number(item.longitude);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    return `<p class="field-hint">No map pin was saved with this report.</p>`;
+  }
+  return `<div id="case-pin-map" class="case-pin-map map-canvas map-canvas--leaflet mt-4" data-lat="${esc(String(lat))}" data-lng="${esc(String(lng))}" role="img" aria-label="Map pin for the assigned report"></div>`;
+}
+
+function vaccineLine(row) {
+  if (!row || typeof row !== "object") return "";
+  const name = row.name || row.vaccine || row.type || "Vaccination";
+  const date = row.date_given || row.date || "";
+  return `${name}${date ? ` · ${date}` : ""}`;
+}
+
+function healthPanel(item) {
+  const health = item.health;
+  if (!health || !health.animal) {
+    return `
+      <section class="rcard min-w-0">
+        <div class="rcard-head"><h2 class="rcard-title"><i data-lucide="heart-pulse"></i>Animal health</h2></div>
+        <div class="rcard-pad"><p class="field-hint">No animal record is linked to this case yet. City Vet adds the animal on the web console.</p></div>
+      </section>`;
+  }
+  const animal = health.animal;
+  const shots = Array.isArray(health.vaccinations) ? health.vaccinations.map(vaccineLine).filter(Boolean) : [];
+  const rate = health.heart_rate_bpm == null ? "—" : `${health.heart_rate_bpm} bpm`;
+  return `
+    <section class="rcard min-w-0" id="case-health">
+      <div class="rcard-head"><h2 class="rcard-title"><i data-lucide="heart-pulse"></i>Animal health</h2></div>
+      <div class="rcard-pad">
+        <dl class="rspec-list">
+          ${spec("Name", esc(animal.name || "Unnamed"))}
+          ${spec("Species", esc(animal.species || "—"))}
+          ${spec("Notes", esc(health.medical_history_notes || "—"))}
+          ${spec("Vaccination", esc(health.vaccination_status || "none"))}
+          ${spec("Latest heart rate", esc(rate))}
+        </dl>
+        ${shots.length ? `<ul class="mt-3 text-sm">${shots.map((line) => `<li>${esc(line)}</li>`).join("")}</ul>` : `<p class="field-hint mt-3">No vaccination recorded yet.</p>`}
+        <form id="case-vax-form" class="mt-4">
+          <p class="field-label">Add a vaccination</p>
+          <div class="grid gap-3 sm:grid-cols-2">
+            <input id="case-vax-name" class="input" name="name" maxlength="80" placeholder="Vaccine name" required>
+            <input id="case-vax-date" class="input" name="date_given" type="date" required>
+          </div>
+          <p class="rform-error mt-2" id="case-vax-error" hidden><i data-lucide="alert-circle"></i><span></span></p>
+          <button type="submit" class="rbtn rbtn--solid rbtn--sm mt-2">Save vaccination</button>
+        </form>
+        <form id="case-hr-form" class="mt-4">
+          <p class="field-label">Add a heart-rate reading</p>
+          <input id="case-hr" class="input" name="heart_rate_bpm" type="number" min="1" max="400" placeholder="Beats per minute" required>
+          <p class="rform-error mt-2" id="case-hr-error" hidden><i data-lucide="alert-circle"></i><span></span></p>
+          <button type="submit" class="rbtn rbtn--solid rbtn--sm mt-2">Save heart rate</button>
+        </form>
+      </div>
+    </section>`;
+}
+
 function proofPanel(item) {
   const canUpload = item.status === "in_progress";
   const photos = item.resolution_photos || [];
@@ -109,11 +168,14 @@ export function renderDetail(item) {
           <dl class="rspec-list">
             ${spec("Animal", esc(item.animal_description || "—"))}
             ${spec("Location", esc(item.address_text || "—"))}
+            ${item.species ? spec("Species", esc(item.species)) : ""}
           </dl>
+          <div class="mt-4">${pinMap(item)}</div>
           <div class="mt-4">${photoGrid(item.photo_urls || [], "No report photos.")}</div>
         </div>
       </section>
 
+      ${healthPanel(item)}
       ${proofPanel(item)}
     </div>`;
 }

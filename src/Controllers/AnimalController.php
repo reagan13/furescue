@@ -7,6 +7,7 @@ use App\Http\Request;
 use App\Http\Response;
 use App\Repositories\AnimalRepository;
 use App\Services\AdoptionEligibilityService;
+use App\Services\AnimalAccess;
 use PDO;
 
 class AnimalController extends AbstractController
@@ -57,6 +58,15 @@ class AnimalController extends AbstractController
             $where .= " AND created_by = ?";
             $params[] = $req->user['id'];
         }
+        if (!in_array('animals.write', $req->permissions, true) && ($req->user['role'] ?? '') !== 'admin') {
+            $visible = ["adoption_status IN ('available','pending','adopted')", 'created_by = ?'];
+            $params[] = $req->user['id'];
+            if (($req->user['role'] ?? '') === 'rescuer') {
+                $visible[] = 'case_id IN (SELECT id FROM cases WHERE assigned_rescuer_id = ?)';
+                $params[] = $req->user['id'];
+            }
+            $where .= ' AND (' . implode(' OR ', $visible) . ')';
+        }
         $page = $this->page($req);
         $perPage = $this->perPage($req);
         $countStmt = $this->pdo->prepare("SELECT COUNT(*) FROM animals {$where}");
@@ -79,9 +89,16 @@ class AnimalController extends AbstractController
             Response::error('NOT_FOUND', 'Animal not found', 404);
             return;
         }
+        $access = new AnimalAccess($this->pdo);
         $data = $animal->toArray();
-        $data['medical'] = $this->repo('animal_medical_records')->findBy('animal_id', $animal->id());
-        $data['field_status'] = $this->repo('animal_field_status')->all(['animal_id' => $animal->id()], 'logged_at', 'DESC');
+        if (!$access->canSee($req->user, $req->permissions, $data)) {
+            Response::error('NOT_FOUND', 'Animal not found', 404);
+            return;
+        }
+        if ($access->canReadMedical($req->user, $req->permissions, (string) $animal->id(), $data['case_id'] ?? null)) {
+            $data['medical'] = $this->repo('animal_medical_records')->findBy('animal_id', $animal->id());
+            $data['field_status'] = $this->repo('animal_field_status')->all(['animal_id' => $animal->id()], 'logged_at', 'DESC');
+        }
         Response::success(['animal' => $data]);
     }
 
@@ -252,6 +269,15 @@ class AnimalController extends AbstractController
 
     public function fieldStatusHistory(Request $req): void
     {
+        $animal = $this->animals->findActive($req->params['id']);
+        if (!$animal) {
+            Response::error('NOT_FOUND', 'Animal not found', 404);
+            return;
+        }
+        if (!(new AnimalAccess($this->pdo))->canReadMedical($req->user, $req->permissions, (string) $animal->id(), $animal->toArray()['case_id'] ?? null)) {
+            Response::error('FORBIDDEN', 'Not allowed to read this health log', 403);
+            return;
+        }
         $rows = $this->repo('animal_field_status')->all(['animal_id' => $req->params['id']], 'logged_at', 'DESC');
         Response::success(['field_status' => $rows]);
     }

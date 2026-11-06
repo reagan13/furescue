@@ -50,6 +50,20 @@ export function openListingForm({ onCreated } = {}) {
           <label for="listing-desc" class="rform-label">Profile <span class="font-normal text-muted-foreground">(required)</span></label>
           <textarea id="listing-desc" name="description" rows="6" maxlength="2000" required class="input input--area input--area-lg" placeholder="Temperament, how it was rescued, and what home it needs."></textarea>
         </div>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <div class="rform-field">
+            <label for="listing-vaccine" class="rform-label">Vaccination <span class="font-normal text-muted-foreground">(required)</span></label>
+            <input id="listing-vaccine" name="vaccine_name" type="text" maxlength="80" required class="input" placeholder="Rabies">
+          </div>
+          <div class="rform-field">
+            <label for="listing-vaccine-date" class="rform-label">Date given</label>
+            <input id="listing-vaccine-date" name="vaccine_date" type="date" required class="input">
+          </div>
+        </div>
+        <div class="rform-field">
+          <label for="listing-weight" class="rform-label">Weight (kg)</label>
+          <input id="listing-weight" name="weight_kg" type="number" min="0" step="0.1" required class="input" placeholder="12.5">
+        </div>
         <div class="rform-field">
           <p class="rform-label">Photo <span class="font-normal text-muted-foreground">(required)</span></p>
           <label for="listing-photos" class="mt-2 flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-input bg-background px-4 py-6 text-center transition-colors hover:bg-accent/50">
@@ -126,8 +140,11 @@ export function openListingForm({ onCreated } = {}) {
     const form = overlay.querySelector("#listing-form");
     const name = form.name.value.trim();
     const description = form.description.value.trim();
-    if (!name || !description || files.length === 0) {
-      errorEl.querySelector("span").textContent = "Name, profile, and at least one photo are required.";
+    const vaccine = form.vaccine_name.value.trim();
+    const vaccineDate = form.vaccine_date.value;
+    const weight = form.weight_kg.value.trim();
+    if (!name || !description || files.length === 0 || !vaccine || !vaccineDate || !weight) {
+      errorEl.querySelector("span").textContent = "Name, profile, a photo, a vaccination, and a weight are required.";
       errorEl.hidden = false;
       return;
     }
@@ -150,6 +167,9 @@ export function openListingForm({ onCreated } = {}) {
     const color = form.color_markings.value.trim();
     if (age) body.append("age_estimate", age);
     if (color) body.append("color_markings", color);
+    body.append("vaccine_name", vaccine);
+    body.append("vaccine_date", vaccineDate);
+    body.append("weight_kg", weight);
     for (const file of files) body.append("photos[]", file);
     try {
       await apiUpload("/adoption-listings", body);

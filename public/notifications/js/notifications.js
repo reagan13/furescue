@@ -17,14 +17,26 @@ const TYPE_STYLE = [
   [/announce|broadcast/, { icon: "megaphone", tone: "" }],
 ];
 
-const RELATED_LINK = {
-  report: { href: "/reports/", label: "View report" },
-  case: { href: "/cases/detail.php?id=", label: "View case" },
-  adoption: { href: "/adoptions/", label: "View adoption" },
-  listing: { href: "/listings/", label: "View listing" },
-};
+function pageRole() {
+  const user = window.__PAGE_STATE__ && window.__PAGE_STATE__.user;
+  return user && user.role ? user.role : "resident";
+}
 
-const CASE_LIST_HREF = "/cases/";
+function linkFor(type) {
+  const role = pageRole();
+  const kind = type === "adoption_listing" ? "listing" : type;
+  if (kind === "case" && role !== "rescuer") return null;
+  if (kind === "report" && role === "rescuer") {
+    return { href: "/cases/", label: "View cases" };
+  }
+  const table = {
+    report: { href: "/reports/?id=", label: "View report" },
+    adoption: { href: "/adoptions/?id=", label: "View adoption" },
+    listing: { href: "/listings/?id=", label: "View listing" },
+    case: { href: "/cases/detail.php?id=", label: "View case" },
+  };
+  return table[kind] || null;
+}
 
 let inboxStream = null;
 
@@ -43,16 +55,11 @@ function styleFor(type) {
 }
 
 function relatedFor(n) {
-  const spec = n.related_type && RELATED_LINK[n.related_type];
+  const spec = linkFor(n.related_type);
   if (!spec) return null;
   const id = n.related_id;
-  if (id == null || id === "") {
-    return {
-      href: n.related_type === "case" ? CASE_LIST_HREF : spec.href,
-      label: spec.label,
-    };
-  }
-  if (n.related_type === "case") {
+  if (id == null || id === "") return { href: spec.href.split("?")[0], label: spec.label };
+  if (spec.href.includes("?id=")) {
     return { href: `${spec.href}${encodeURIComponent(id)}`, label: spec.label };
   }
   const joiner = spec.href.includes("?") ? "&" : "?";

@@ -340,6 +340,52 @@ class CasesApiTest extends ApiTestCase
         ), 'VALIDATION_ERROR', 400);
     }
 
+    public function testAssignedCaseIncludesTheReportPin(): void
+    {
+        $rescuer = $this->seedRescuer();
+        $report = $this->seedReport(['latitude' => '6.955000', 'longitude' => '126.210000', 'address_text' => 'Dahican']);
+        $case = $this->seedCase([
+            'report_id' => $report['id'],
+            'assigned_rescuer_id' => $rescuer['id'],
+            'status' => 'assigned',
+        ]);
+        $this->seedAnimal(['case_id' => $case['id'], 'name' => 'Ligaya']);
+        $data = $this->assertOk($this->get('/api/v1/cases/' . $case['id'], [], $this->actingAs($rescuer)));
+        $this->assertSame('6.955000', (string) $data['case']['latitude']);
+        $this->assertSame('126.210000', (string) $data['case']['longitude']);
+        $this->assertSame('Ligaya', $data['case']['health']['animal']['name']);
+    }
+
+    public function testAssignedRescuerCanRecordVaccinationAndHeartRate(): void
+    {
+        $rescuer = $this->seedRescuer();
+        $case = $this->seedCase(['assigned_rescuer_id' => $rescuer['id'], 'status' => 'in_progress']);
+        $this->seedAnimal(['case_id' => $case['id']]);
+        $health = $this->assertOk($this->post(
+            '/api/v1/cases/' . $case['id'] . '/vaccinations',
+            ['name' => 'Rabies', 'date_given' => '2026-10-01'],
+            $this->actingAs($rescuer)
+        ));
+        $this->assertSame('Rabies', $health['health']['vaccinations'][0]['name']);
+        $rate = $this->assertOk($this->post(
+            '/api/v1/cases/' . $case['id'] . '/heart-rate',
+            ['heart_rate_bpm' => 96],
+            $this->actingAs($rescuer)
+        ));
+        $this->assertSame(96, (int) $rate['health']['heart_rate_bpm']);
+    }
+
+    public function testResidentCannotOpenTheCaseMap(): void
+    {
+        $resident = $this->seedResident();
+        $case = $this->seedCase();
+        $this->assertError(
+            $this->get('/api/v1/cases/' . $case['id'], [], $this->actingAs($resident)),
+            'FORBIDDEN',
+            403
+        );
+    }
+
     private function removeDir(string $dir): void
     {
         if (!is_dir($dir)) {

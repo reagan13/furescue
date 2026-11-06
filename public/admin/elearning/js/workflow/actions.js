@@ -8,6 +8,11 @@ import { CATEGORIES, emptyEditor } from "../components/util.js";
 
 const CATEGORY_KEYS = CATEGORIES.map((c) => c.key);
 
+function quizText(value) {
+  if (Array.isArray(value)) return JSON.stringify(value, null, 2);
+  return typeof value === "string" ? value : "";
+}
+
 function moduleTitle(id) {
   const row = state.modules.find((m) => m.id === id);
   if (row && row.title) return row.title;
@@ -41,6 +46,7 @@ export async function openEdit(id) {
       title: mod.title || "",
       category: mod.category || "general_care",
       content_body: mod.content_body || "",
+      quiz_json: quizText(mod.quiz_json),
       published_status: mod.published_status === "published" ? "published" : "draft",
     };
     rerenderAll();
@@ -60,6 +66,14 @@ function validate(fields) {
   if (!CATEGORY_KEYS.includes(fields.category)) return "Choose a valid category.";
   if (!fields.content_body.trim()) return "Content body is required.";
   if (fields.content_body.length > 20000) return "Content body must be 20,000 characters or fewer.";
+  if (fields.quiz_json) {
+    try {
+      const parsed = JSON.parse(fields.quiz_json);
+      if (!Array.isArray(parsed)) return "Quiz JSON must be a list of questions.";
+    } catch {
+      return "Quiz JSON is not valid.";
+    }
+  }
   return "";
 }
 

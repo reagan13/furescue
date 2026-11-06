@@ -29,8 +29,10 @@ function parseUrls(value) {
   return Array.isArray(parsed) ? parsed.filter((u) => typeof u === "string" && u.trim() !== "") : [];
 }
 
-function animalName(animalId) {
-  const a = animalMap.get(animalId);
+function animalName(row) {
+  const fromApi = row && row.animal_name && String(row.animal_name).trim();
+  if (fromApi) return fromApi;
+  const a = animalMap.get(row && row.animal_id);
   return a && a.name && String(a.name).trim() !== "" ? String(a.name).trim() : "an animal";
 }
 
@@ -48,7 +50,7 @@ function rowHtml(row) {
       }
     </span>
     <div class="rrow-main">
-      <p class="rrow-title">${esc(animalName(row.animal_id))}</p>
+      <p class="rrow-title">${esc(animalName(row))}</p>
       <p class="rrow-sub">Posted ${esc(timeAgo(row.created_at))} · <a class="underline text-primary" href="/animals/detail.php?id=${esc(
     row.animal_id
   )}">view profile</a></p>
@@ -83,6 +85,14 @@ async function load() {
     } else {
       el("listings-empty").hidden = true;
       list.innerHTML = rows.map(rowHtml).join("");
+      const focusId = new URLSearchParams(location.search).get("id");
+      if (focusId) {
+        const row = list.querySelector(`[data-id="${CSS.escape(focusId)}"]`);
+        if (row) {
+          row.classList.add("is-record-focus");
+          row.scrollIntoView({ block: "center" });
+        }
+      }
     }
     createIcons({ icons });
   } catch (err) {

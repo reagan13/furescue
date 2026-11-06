@@ -7,6 +7,25 @@ class ElearningQuiz
     /**
      * @return list<array{q:string,options:list<string>,a:int}>
      */
+    public static function store(mixed $raw): ?string
+    {
+        if ($raw === null || $raw === '' || $raw === []) {
+            return json_encode([]);
+        }
+        if (is_string($raw) && in_array(trim($raw), ['', '[]', 'null'], true)) {
+            return json_encode([]);
+        }
+        $decoded = self::decode($raw);
+        $empty = $decoded === [];
+        $blank = $raw === null || $raw === '' || $raw === []
+            || (is_string($raw) && in_array(trim($raw), ['', '[]', 'null'], true));
+        if ($empty && !$blank) {
+            throw new \InvalidArgumentException('Quiz must be a list of questions. Each question needs text, options, and an answer index.');
+        }
+
+        return json_encode($decoded, JSON_UNESCAPED_UNICODE);
+    }
+
     public static function decode(mixed $raw): array
     {
         if (is_array($raw)) {

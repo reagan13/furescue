@@ -180,7 +180,9 @@ async function openLesson(moduleId) {
       void apiFetch("/elearning/progress", {
         method: "POST",
         body: { module_id: mod.id, status: "in_progress", read_pct: 0 },
-      }).catch(() => {});
+      }).catch((err) => {
+        toast(err.message || "Lesson progress was not saved.", { type: "error" });
+      });
     }
 
     const done = statusFor(mod.id)?.status === "completed";

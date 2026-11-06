@@ -45,7 +45,12 @@ function trend_rows_html(array $trends): string
 
 function health_update_row(array $h): array
 {
-    $healthy = ($h['health_status'] ?? '') === 'healthy';
+    $status = (string) ($h['vaccination_status'] ?? 'none');
+    $label = match ($status) {
+        'complete' => 'Vaccination complete',
+        'partial' => 'Vaccination partial',
+        default => 'No vaccination',
+    };
     $animalParts = array_filter(
         [(string) ($h['animal_name'] ?? ''), (string) ($h['breed_type'] ?? '')],
         static fn($p) => $p !== ''
@@ -53,10 +58,10 @@ function health_update_row(array $h): array
     return [
         'id' => short_id($h['id'] ?? null),
         'animal' => $animalParts !== [] ? implode(', ', $animalParts) : 'Unnamed animal',
-        'by' => ($h['logged_by_name'] ?? null) ?: '—',
-        'when' => time_ago($h['logged_at'] ?? null),
-        'status' => $healthy ? 'Stable' : 'Needs Attention',
-        'statusCls' => $healthy ? 'stamp--accent' : 'stamp--coral',
+        'by' => ($h['updated_by_name'] ?? null) ?: '—',
+        'when' => time_ago($h['updated_at'] ?? null),
+        'status' => $label,
+        'statusCls' => $status === 'complete' ? 'stamp--accent' : 'stamp--coral',
     ];
 }
 

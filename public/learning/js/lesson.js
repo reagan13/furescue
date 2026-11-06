@@ -71,8 +71,8 @@ export async function saveReadPct(moduleId, pct) {
       method: "POST",
       body: { module_id: moduleId, status: "in_progress", read_pct: pct },
     });
-  } catch {
-    /* progress write is best-effort */
+  } catch (err) {
+    toast(err.message || "Lesson progress was not saved.", { type: "error" });
   }
 }
 

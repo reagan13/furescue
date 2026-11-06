@@ -71,7 +71,7 @@ function photosHtml(urls) {
     .map((url) => {
       const ext = (url.split("?")[0].split(".").pop() || "").toLowerCase();
       if (ext === "mp4" || ext === "webm") {
-        return '<span class="flex h-16 w-16 items-center justify-center rounded-lg border border-border bg-secondary text-muted-foreground"><i data-lucide="film" class="h-5 w-5"></i></span>';
+        return `<video class="h-40 max-w-full rounded-lg border border-border" controls preload="metadata" src="${esc(url)}"></video>`;
       }
       return `<img src="${esc(url)}" alt="Report photo" loading="lazy" class="h-16 w-16 rounded-lg border border-border object-cover">`;
     })
@@ -141,6 +141,12 @@ function renderReports(reports) {
   if (!list) return;
   list.innerHTML = reports.length ? reports.map(reportCard).join("") : emptyStateHtml();
   createIcons({ icons });
+  const focusId = new URLSearchParams(location.search).get("id");
+  if (!focusId) return;
+  const row = list.querySelector(`[data-report-id="${CSS.escape(focusId)}"]`);
+  if (!row) return;
+  row.classList.add("is-record-focus");
+  row.scrollIntoView({ block: "center" });
 }
 
 function renderError(message) {

@@ -88,7 +88,7 @@ export const fetchMedicalAnimalIds = () =>
 export const fetchHealthActivity = () =>
   raw("/health/activity").then((d) => (d && d.daily) || []);
 
-export const fetchHeatmap = (status = "all") =>
+export const fetchHeatmap = (status = "verified") =>
   raw(`/reports/map/heatmap?status=${encodeURIComponent(status)}`).then((d) => (d && d.points) || []);
 
 export const reverseGeocode = (lat, lng) =>

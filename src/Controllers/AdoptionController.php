@@ -23,16 +23,16 @@ class AdoptionController extends AbstractController
             Response::error('NOT_FOUND', 'Animal not found', 404);
             return;
         }
-        if ($animal['adoption_status'] !== 'available') {
-            Response::error('NOT_ADOPTABLE', 'Animal is not available for adoption', 409);
-            return;
-        }
         $existing = $this->repo('adoptions')->findByComposite(
             ['animal_id', 'applicant_id', 'status'],
             [$req->body['animal_id'], $req->user['id'], 'pending']
         );
         if ($existing) {
             Response::error('APPLICATION_EXISTS', 'A pending application already exists for this animal', 409);
+            return;
+        }
+        if ($animal['adoption_status'] !== 'available') {
+            Response::error('NOT_ADOPTABLE', 'Animal is not available for adoption', 409);
             return;
         }
         $id = $this->repo('adoptions')->create([
@@ -42,6 +42,7 @@ class AdoptionController extends AbstractController
             'message' => isset($req->body['message']) ? trim((string) $req->body['message']) : null,
             'status' => 'pending',
         ]);
+        $this->repo('animals')->update($req->body['animal_id'], ['adoption_status' => 'pending']);
         $this->notifyRole('admin', 'adoption_applied', 'A new adoption application was submitted.', 'adoption', $id);
         Response::success(['adoption' => $this->repo('adoptions')->find($id)], 201);
     }
@@ -63,6 +64,7 @@ class AdoptionController extends AbstractController
             return;
         }
         $repo->update($adoption['id'], ['status' => 'cancelled']);
+        $this->releaseAnimalIfIdle((string) $adoption['animal_id']);
         Response::success(['adoption' => $repo->find($adoption['id'])]);
     }
 
@@ -152,7 +154,9 @@ class AdoptionController extends AbstractController
         $repo->update($adoption['id'], $data);
 
         if ($decision === 'approved') {
-            $this->repo('animals')->update($adoption['animal_id'], ['adoption_status' => 'adopted']);
+            $this->repo('animals')->update($adoption['animal_id'], ['adoption_status' => 'pending']);
+        } else {
+            $this->releaseAnimalIfIdle((string) $adoption['animal_id']);
         }
 
         $notif = new NotificationService($this->pdo);
@@ -173,8 +177,24 @@ class AdoptionController extends AbstractController
             return;
         }
         $repo->update($adoption['id'], ['status' => 'completed', 'completed_at' => date('Y-m-d H:i:s')]);
+        $this->repo('animals')->update($adoption['animal_id'], ['adoption_status' => 'adopted']);
         $notif = new NotificationService($this->pdo);
         $notif->notify($adoption['applicant_id'], 'adoption_completed', 'Your adoption is complete. Thank you!', 'adoption', $adoption['id']);
         Response::success(['adoption' => $repo->find($adoption['id'])]);
+    }
+
+    private function releaseAnimalIfIdle(string $animalId): void
+    {
+        $stmt = $this->pdo->prepare(
+            "SELECT COUNT(*) FROM adoptions
+             WHERE animal_id = ? AND status IN ('pending', 'approved')"
+        );
+        $stmt->execute([$animalId]);
+        if ((int) $stmt->fetchColumn() === 0) {
+            $animal = $this->repo('animals')->find($animalId);
+            if ($animal && ($animal['adoption_status'] ?? '') === 'pending') {
+                $this->repo('animals')->update($animalId, ['adoption_status' => 'available']);
+            }
+        }
     }
 }
