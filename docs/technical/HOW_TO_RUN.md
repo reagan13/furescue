@@ -108,7 +108,14 @@ FLUSH PRIVILEGES;
    # Required key to open the dev DB viewer at /dbtool/?key=...
    DEVTOOL_KEY=change_me_devtool_key
    ```
-   *The Mati City geovalidation bounds and Google client ID are pre-filled and fine to keep.*
+   The Mati City geovalidation bounds are pre-filled and fine to keep.
+
+   Google sign-in sends an ID token. It does not use a redirect URI. Password login already works without Google. In Google Cloud Console, open the Web client for `GOOGLE_CLIENT_ID` and add these Authorized JavaScript origins:
+
+   - `http://127.0.0.1:8000`
+   - `http://localhost:8000`
+
+   If that Google project is not ours, create a Web client and set `GOOGLE_CLIENT_ID` in `.env`. Do not commit `.env`. A `401 invalid_client` popup that says “No registered origin” means this Cloud Console step is still missing. Google sign-in works only after that origin is saved.
 
 ### Step 8 — Install PHP dependencies
 From the repo root:

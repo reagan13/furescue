@@ -163,8 +163,8 @@ class MessageController extends AbstractController
                 return false;
             }
             $isOwner = ($report['resident_id'] ?? null) === ($req->user['id'] ?? null);
-            if (!$isOwner && !in_array('reports.read', $req->permissions, true)) {
-                Response::error('FORBIDDEN', 'Not allowed to message about this report', 403);
+            if (!$isOwner && !in_array('reports.read', $req->permissions, true) && !$this->isThreadParticipant($req, $type, $id)) {
+                Response::error('FORBIDDEN', 'Only the resident who filed this report, or an admin, can open this thread.', 403);
                 return false;
             }
             return true;
@@ -180,8 +180,8 @@ class MessageController extends AbstractController
                 || in_array('cases.assign', $req->permissions, true);
             $report = $this->repo('reports')->find((string) ($case['report_id'] ?? ''));
             $isResident = ($report['resident_id'] ?? null) === ($req->user['id'] ?? null);
-            if (!$isAssignee && !$canRead && !$isResident) {
-                Response::error('FORBIDDEN', 'Not allowed to message about this case', 403);
+            if (!$isAssignee && !$canRead && !$isResident && !$this->isThreadParticipant($req, $type, $id)) {
+                Response::error('FORBIDDEN', 'Only the resident who filed this report, the assigned rescuer, or an admin can open this thread.', 403);
                 return false;
             }
             return true;
@@ -192,10 +192,26 @@ class MessageController extends AbstractController
             return false;
         }
         $isApplicant = ($adoption['applicant_id'] ?? null) === ($req->user['id'] ?? null);
-        if (!$isApplicant && !in_array('adoptions.read', $req->permissions, true)) {
-            Response::error('FORBIDDEN', 'Not allowed to message about this adoption', 403);
+        if (!$isApplicant && !in_array('adoptions.read', $req->permissions, true) && !$this->isThreadParticipant($req, $type, $id)) {
+            Response::error('FORBIDDEN', 'Only the resident who applied, or an admin, can open this thread.', 403);
             return false;
         }
         return true;
+    }
+
+    private function isThreadParticipant(Request $req, string $type, string $id): bool
+    {
+        $userId = (string) ($req->user['id'] ?? '');
+        if ($userId === '') {
+            return false;
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT 1 FROM messages
+             WHERE related_type = ? AND related_id = ?
+               AND (sender_id = ? OR receiver_id = ?)
+             LIMIT 1'
+        );
+        $stmt->execute([$type, $id, $userId, $userId]);
+        return (bool) $stmt->fetchColumn();
     }
 }

@@ -95,7 +95,7 @@ function infoHtml({ spinCount }) {
   <div class="rcard rcard-pad">
     <div class="flex flex-wrap items-center gap-2">
       <h1 class="rpage-title">${esc(animal.name || "Unnamed")}</h1>
-      <span class="rchip ${status.cls}">${esc(status.text)}</span>
+      <span class="rchip ${status.cls}" id="adoption-status-chip">${esc(status.text)}</span>
     </div>
     <p class="rpage-sub">${esc(label(animal.breed_type) || "Mixed")} · ${esc(sexLabel)}${
     animal.age_estimate ? ` · ${esc(String(animal.age_estimate))}` : ""
@@ -146,15 +146,29 @@ function aboutHtml() {
 }
 
 function medicalHtml() {
-  const m = animal.medical;
-  if (!m) return "";
-  const notes = m.medical_history_notes ? String(m.medical_history_notes).trim() : "";
-  if (!notes && !m.vaccination_status) return "";
+  const m = animal.medical || null;
+  const notes = m && m.medical_history_notes ? String(m.medical_history_notes).trim() : "";
+  const entries = Array.isArray(animal.history) ? animal.history : [];
+  if (!notes && !entries.length) return "";
+  const items = entries
+    .map((entry) => {
+      const title = entry && entry.title ? String(entry.title) : "Record";
+      const description = entry && entry.description ? String(entry.description) : "";
+      const when = fmtDate(entry && entry.date);
+      const doctor = entry && entry.doctor ? String(entry.doctor) : "";
+      return `
+    <li class="rtimeline-item">
+      <strong>${esc(title)}</strong>${description ? ` · ${esc(description)}` : ""}
+      <br><span class="text-xs font-mono text-muted-foreground">${esc(when)}${doctor ? ` · ${esc(doctor)}` : ""}</span>
+    </li>`;
+    })
+    .join("");
   return `
   <div class="rcard">
     <div class="rcard-head"><i data-lucide="stethoscope" class="text-primary"></i><h2 class="rcard-title">Medical summary</h2></div>
     <div class="rcard-pad text-sm leading-relaxed">
-      ${notes ? `<p class="whitespace-pre-line">${esc(notes)}</p>` : `<p class="text-muted-foreground">No medical notes recorded yet.</p>`}
+      ${items ? `<ul class="rtimeline">${items}</ul>` : ""}
+      ${notes ? `<p class="whitespace-pre-line${items ? " mt-4" : ""}">${esc(notes)}</p>` : ""}
     </div>
   </div>`;
 }
@@ -224,11 +238,18 @@ function onDetailClick(event) {
 
 function onApplied() {
   applied = true;
-  const applyBtn = el("btn-apply");
-  if (applyBtn) {
-    applyBtn.innerHTML = `<i data-lucide="check-circle-2"></i><span>Application submitted</span>`;
-    createIcons({ icons });
+  if (animal) animal.adoption_status = "pending";
+  const chip = el("adoption-status-chip");
+  if (chip) {
+    chip.className = "rchip rchip--brand";
+    chip.textContent = "Adoption pending";
   }
+  const applyBtn = el("btn-apply");
+  if (!applyBtn) return;
+  const note = document.createElement("p");
+  note.className = "rpage-sub mt-5";
+  note.textContent = "Application submitted";
+  applyBtn.replaceWith(note);
 }
 
 function boot() {

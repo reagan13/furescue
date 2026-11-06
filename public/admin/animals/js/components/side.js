@@ -1,5 +1,5 @@
 import { createIcons, icons } from "lucide";
-import { state, getAnimal, statusTone } from "../state.js";
+import { state, getAnimal, speciesIcon, statusTone } from "../state.js";
 import { Button } from "/shared/components/button/button.js";
 import { syncDetailLayout } from "./grid.js";
 import { esc } from "./util.js";
@@ -33,8 +33,12 @@ export function DetailPanel() {
     </div>`
     )
     .join("");
+  const photo = a.photo
+    ? `<div class="animal-detail-photo"><img src="${esc(a.photo)}" alt="${esc(a.name)}"></div>`
+    : `<div class="animal-detail-photo animal-detail-photo--empty" aria-hidden="true"><i data-lucide="${esc(speciesIcon(a.species))}"></i></div>`;
   return `
   <div class="panel panel--padded animal-detail">
+    ${photo}
     <div class="panel-title-wrap">
       <i data-lucide="${esc(({ Dog: "paw-print", Cat: "cat", Bird: "bird", Rabbit: "rabbit", Other: "paw-print" })[a.species] || "paw-print")}"></i>
       <h2 class="panel-title panel-title--sm">${esc(a.name)}</h2>

@@ -110,6 +110,7 @@ export function openHealthRecordDialog(animal) {
         toast("Health record saved.", { type: "success" });
         overlay.remove();
         resolve(animal);
+        window.location.assign(`/admin/health-records/health-record.php?id=${encodeURIComponent(animal.id)}`);
       } catch (err) {
         busy = false;
         okBtn.disabled = false;

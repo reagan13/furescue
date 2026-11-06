@@ -1,10 +1,8 @@
 import { toast } from "/shared/components/toast/toast.js";
-import { confirmDialog } from "/shared/components/dialog/dialog.js";
 import { fetchThreads, fetchThread, postMessage, markMessageRead } from "../api.js";
 import { state, threadKey, findThread, upsertThread } from "../state.js";
 import { renderList } from "../components/list.js";
-import { renderPane, showThreadChrome, syncInboxLayout } from "../components/pane.js";
-import { contextLabel } from "../util.js";
+import { renderPane, renderPaneNotice, showThreadChrome, syncInboxLayout } from "../components/pane.js";
 
 async function loadMessages(key) {
   const [type, id] = String(key || "").split("|");
@@ -56,7 +54,9 @@ export async function openThread(key) {
     state.messages = messages;
     renderPane(messages);
   } catch (err) {
-    toast(err.message || "Could not load this conversation.", { type: "error" });
+    const message = err.message || "Only the resident who filed this report, the assigned rescuer, or an admin can open this thread.";
+    renderPaneNotice(message);
+    toast(message, { type: "error" });
     return;
   }
   void markThreadRead(key);
@@ -77,21 +77,8 @@ export async function sendCurrent() {
   const text = String(input && input.value ? input.value : "").trim();
   if (!text) return;
 
-  const peer = thread.other_user_name || "this conversation";
-  const context = contextLabel(thread.related_type).toLowerCase();
   state.sending = true;
   if (sendBtn) sendBtn.disabled = true;
-  const ok = await confirmDialog({
-    title: "Send this message?",
-    message: `This will send a message to ${peer} about this ${context}.`,
-    confirmText: "Send",
-  });
-  if (!ok) {
-    state.sending = false;
-    if (sendBtn) sendBtn.disabled = false;
-    input?.focus();
-    return;
-  }
   try {
     await postMessage({
       receiver_id: thread.other_user_id,

@@ -8,7 +8,7 @@ export const state = {
   rescuers: [],
   filter: "all",
   query: "",
-  sort: "assigned",
+  sort: "newest",
   page: 1,
   pageSize: 20,
 };

@@ -1,7 +1,6 @@
 import { createIcons, icons } from "lucide";
 import { apiFetch } from "/assets/js/lib/api.js";
 import { toast } from "/shared/components/toast/toast.js";
-import { confirmDialog } from "/shared/components/dialog/dialog.js";
 import { esc } from "/assets/js/lib/format.js";
 
 function role() {
@@ -131,12 +130,6 @@ export async function openCompose({ onSent, preselect } = {}) {
       return;
     }
     const [related_type, related_id] = raw.split("|");
-    const ok = await confirmDialog({
-      title: "Send this message?",
-      message: `This will start a conversation with ${receiverName}.`,
-      confirmText: "Send message",
-    });
-    if (!ok) return;
     try {
       await apiFetch("/messages", {
         method: "POST",

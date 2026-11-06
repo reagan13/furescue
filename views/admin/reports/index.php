@@ -81,33 +81,10 @@ foreach ($rescuers as $u) {
     $rescuerById[(string) ($u['id'] ?? '')] = $u;
 }
 
-$rptCaseStatusRank = static function (?array $c): int {
-    if ($c === null) {
-        return 0;
-    }
-    return match ((string) ($c['status'] ?? '')) {
-        'open' => 1,
-        'assigned' => 2,
-        'in_progress' => 3,
-        default => 4,
-    };
-};
-usort($reports, static function (array $a, array $b) use ($caseByReport, $rptCaseStatusRank): int {
-    $ca = $caseByReport[(string) ($a['id'] ?? '')] ?? null;
-    $cb = $caseByReport[(string) ($b['id'] ?? '')] ?? null;
-    $assignedA = ($ca !== null && !empty($ca['assigned_rescuer_id'])) ? 0 : 1;
-    $assignedB = ($cb !== null && !empty($cb['assigned_rescuer_id'])) ? 0 : 1;
-    if ($assignedA !== $assignedB) {
-        return $assignedA <=> $assignedB;
-    }
-    $rankA = $rptCaseStatusRank($ca);
-    $rankB = $rptCaseStatusRank($cb);
-    if ($rankA !== $rankB) {
-        return $rankA <=> $rankB;
-    }
-    $tsA = -((int) strtotime((string) ($a['created_at'] ?? '')));
-    $tsB = -((int) strtotime((string) ($b['created_at'] ?? '')));
-    return $tsA <=> $tsB;
+usort($reports, static function (array $a, array $b): int {
+    $tsA = (int) strtotime((string) ($a['created_at'] ?? ''));
+    $tsB = (int) strtotime((string) ($b['created_at'] ?? ''));
+    return $tsB <=> $tsA;
 });
 
 $PAGE_SIZE = pagination_default_page_size();
@@ -210,9 +187,10 @@ $filterDefs = [
 ];
 
 $sortSelect = select_control('report-sort', [
+    ['value' => 'newest', 'label' => 'Newest'],
     ['value' => 'assigned', 'label' => 'Assigned'],
     ['value' => 'verified', 'label' => 'Verified'],
-], 'assigned', 'Sort', '', '', 'report-sort-control');
+], 'newest', 'Sort', '', '', 'report-sort-control');
 
 $adminChildren = '
   <div class="page-head">

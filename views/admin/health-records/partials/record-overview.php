@@ -54,9 +54,19 @@ if ($overview) {
     $interpretation = implode(' ', $parts);
 }
 
-$notesHtml = $interpretation !== ''
+$savedNotes = trim((string) ($overview['notes'] ?? ''));
+$savedNotesHtml = $savedNotes !== ''
+    ? '<div class="hr-notes"><p class="hr-notes-text">' . e($savedNotes) . '</p>'
+        . (!empty($overview['notesMeta']) ? '<p class="hr-notes-meta">' . e((string) $overview['notesMeta']) . '</p>' : '')
+        . '</div>'
+    : '';
+$interpretationHtml = $interpretation !== ''
     ? '<div class="hr-notes"><p class="hr-notes-text">' . e($interpretation) . '</p><p class="hr-notes-meta">' . e($overview['notesMeta'] ?? 'Interpretation of the health overview data above') . '</p></div>'
-    : $emptyState('No health data recorded');
+    : '';
+$notesHtml = $savedNotesHtml . $interpretationHtml;
+if ($notesHtml === '') {
+    $notesHtml = $emptyState('No health data recorded');
+}
 
 $overviewPanelHtml = '
   <section class="panel hr-overview-panel">

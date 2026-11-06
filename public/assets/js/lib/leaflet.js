@@ -110,7 +110,10 @@ export async function mountPinMap(el, lat, lng, options = {}) {
 
   window.L.tileLayer(OSM_TILES, { attribution: OSM_ATTR, maxZoom: 18 }).addTo(map);
   const marker = window.L.marker([lat, lng]).addTo(map);
-  if (options.popup) marker.bindPopup(options.popup);
+  if (options.popup) {
+    const maxWidth = Number.isFinite(options.popupMaxWidth) ? options.popupMaxWidth : 300;
+    marker.bindPopup(options.popup, { maxWidth });
+  }
   window.setTimeout(() => map.invalidateSize(), options.invalidateDelay ?? 300);
   return { map, marker };
 }

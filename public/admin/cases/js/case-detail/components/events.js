@@ -1,4 +1,5 @@
 import { createIcons, icons } from "lucide";
+import { mountPinMap } from "/assets/js/lib/leaflet.js";
 import * as api from "/assets/js/admin/admin-data.js";
 import { toast } from "/shared/components/toast/toast.js";
 import { confirmDialog } from "/shared/components/dialog/dialog.js";
@@ -10,6 +11,7 @@ import { shortId } from "/admin/js/helpers.js";
 import { state, loadCaseDetail } from "../state.js";
 import { CaseDetailPage } from "./actions.js";
 import { renderLocation } from "./location.js";
+import { esc } from "./util.js";
 
 const MAX_ATTACH_BYTES = 10 * 1024 * 1024;
 const MAX_PROOF_BYTES = 5 * 1024 * 1024;
@@ -115,6 +117,21 @@ export function mountCaseDetail() {
   createIcons({ icons });
 }
 
+function mountCasePinMap() {
+  const mapEl = document.getElementById("case-pin-map");
+  if (!mapEl || mapEl.dataset.pinMounted === "1") return;
+  const lat = Number(mapEl.dataset.lat);
+  const lng = Number(mapEl.dataset.lng);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+  const report = (state.caseData && state.caseData.report) || state.report || {};
+  const address = String(report.address_text || "").trim();
+  mapEl.dataset.pinMounted = "1";
+  void mountPinMap(mapEl, lat, lng, {
+    popup: address ? esc(address) : "Report location",
+    popupMaxWidth: 200,
+  });
+}
+
 function caseId() {
   return (state.caseData && state.caseData.id) || state.caseId
     || new URLSearchParams(window.location.search).get("id");
@@ -126,6 +143,7 @@ export function initCaseDetailEvents() {
   }
   const root = document.getElementById("app");
   if (!root) return;
+  mountCasePinMap();
   if (!root.dataset.cdEventsBound) {
     root.dataset.cdEventsBound = "1";
     root.addEventListener("click", async (e) => {

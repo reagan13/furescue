@@ -299,6 +299,33 @@ class MessagesApiTest extends ApiTestCase
         );
     }
 
+    public function testParticipantCanReadCaseThreadTheyDoNotOwn(): void
+    {
+        $owner = $this->seedResident();
+        $other = $this->seedResident();
+        $rescuer = $this->seedRescuer();
+        $report = $this->seedReport(['resident_id' => $owner['id']]);
+        $case = $this->seedCase([
+            'report_id' => $report['id'],
+            'assigned_rescuer_id' => $rescuer['id'],
+            'status' => 'assigned',
+        ]);
+        $this->seedMessage([
+            'sender_id' => $rescuer['id'],
+            'receiver_id' => $other['id'],
+            'related_type' => 'case',
+            'related_id' => $case['id'],
+            'message_text' => 'helloo',
+        ]);
+
+        $data = $this->assertOk($this->get('/api/v1/messages', [
+            'related_type' => 'case',
+            'related_id' => $case['id'],
+        ], $this->actingAs($other)));
+
+        $this->assertSame('helloo', $data['messages'][0]['message_text']);
+    }
+
     public function testCaseThreadForbiddenForResident(): void
     {
         $resident = $this->seedResident();

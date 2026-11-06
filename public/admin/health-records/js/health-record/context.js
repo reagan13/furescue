@@ -42,23 +42,42 @@ export function setAfterReload(fn) {
   afterReload = fn;
 }
 
+const SELECT_HANDLERS = {
+  "hr-adoption-status": (val) => syncHidden("hr-adoption-status", val),
+  "hr-deworming": (val) => syncHidden("hr-deworming", val),
+  "hr-neutered": (val) => syncHidden("hr-neutered", val),
+};
+
+function mainHtml(html) {
+  const holder = document.createElement("template");
+  holder.innerHTML = html;
+  const nextMain = holder.content.querySelector(".admin-main");
+  return nextMain ? nextMain.innerHTML : html;
+}
+
 export function paint() {
   const app = document.getElementById("app");
   if (!app) return;
+  let html;
   try {
-    app.innerHTML = pageHtml();
+    html = pageHtml();
   } catch (err) {
     console.error("health-record paint failed", err);
     return;
   }
+  const main = app.querySelector(".admin-shell .admin-main");
+  if (main) {
+    main.innerHTML = mainHtml(html);
+    createIcons({ icons });
+    initDatePicker(main);
+    initSelect(main, SELECT_HANDLERS);
+    return;
+  }
+  app.innerHTML = html;
   createIcons({ icons });
   initShell();
   initDatePicker(app);
-  initSelect(app, {
-    "hr-adoption-status": (val) => syncHidden("hr-adoption-status", val),
-    "hr-deworming": (val) => syncHidden("hr-deworming", val),
-    "hr-neutered": (val) => syncHidden("hr-neutered", val),
-  });
+  initSelect(app, SELECT_HANDLERS);
 }
 
 export async function reloadRecord() {

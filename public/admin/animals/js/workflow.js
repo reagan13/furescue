@@ -27,14 +27,17 @@ export function initAnimalsEvents() {
     const healthBtn = e.target.closest('[data-act="add-health"]');
     if (healthBtn) {
       const animal = getAnimal(state.selectedId);
-      if (animal) {
-        const saved = await openHealthRecordDialog(animal);
-        if (saved) {
-          animal.hasMedical = true;
-          renderAnimalGrid();
-          renderAnimalKpis();
-          renderDetail();
-        }
+      if (!animal) return;
+      if (animal.hasMedical) {
+        window.location.assign(`/admin/health-records/health-record.php?id=${encodeURIComponent(animal.id)}`);
+        return;
+      }
+      const saved = await openHealthRecordDialog(animal);
+      if (saved) {
+        animal.hasMedical = true;
+        renderAnimalGrid();
+        renderAnimalKpis();
+        renderDetail();
       }
       return;
     }

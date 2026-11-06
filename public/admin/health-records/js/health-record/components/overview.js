@@ -34,9 +34,13 @@ export function OverviewPanel(o, vaccinations = [], { editing = false } = {}) {
   const latest = list[0] || null;
 
   const interpretation = interpretOverview(o);
-  const notes = interpretation
+  const savedNotes = o.notes && String(o.notes).trim()
+    ? `<div class="hr-notes"><p class="hr-notes-text">${esc(o.notes)}</p>${o.notesMeta ? `<p class="hr-notes-meta">${esc(o.notesMeta)}</p>` : ""}</div>`
+    : "";
+  const interpretationHtml = interpretation
     ? `<div class="hr-notes"><p class="hr-notes-text">${esc(interpretation)}</p><p class="hr-notes-meta">${esc(o.notesMeta || "Interpretation of the health overview data above")}</p></div>`
-    : emptyState("No health data recorded");
+    : "";
+  const notes = savedNotes + interpretationHtml || emptyState("No health data recorded");
 
   const editFields = editing
     ? `<div class="hr-edit-fields">

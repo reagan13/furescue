@@ -8,9 +8,15 @@ export function esc(value) {
   }[c]));
 }
 
+function parseTimestamp(input) {
+  const raw = String(input).trim();
+  if (!raw) return new Date(NaN);
+  return new Date(raw.includes("T") ? raw : raw.replace(" ", "T"));
+}
+
 export function timeAgo(input) {
   if (!input) return "";
-  const then = new Date(String(input).replace(" ", "T") + (String(input).includes("Z") || String(input).includes("+") ? "" : "Z"));
+  const then = parseTimestamp(input);
   const ms = Date.now() - then.getTime();
   if (Number.isNaN(ms)) return String(input);
   const mins = Math.floor(ms / 60000);
@@ -25,7 +31,7 @@ export function timeAgo(input) {
 
 export function clockTime(input) {
   if (!input) return "";
-  const d = new Date(String(input).replace(" ", "T") + (String(input).includes("Z") || String(input).includes("+") ? "" : "Z"));
+  const d = parseTimestamp(input);
   if (Number.isNaN(d.getTime())) return String(input);
   return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 }

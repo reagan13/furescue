@@ -11,6 +11,29 @@ function InfoRow(label, value) {
     </div>`;
 }
 
+function finiteCoord(value) {
+  if (typeof value === "string") value = value.trim();
+  if (value === null || value === undefined || value === "" || typeof value === "boolean") return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function locationLabel(report) {
+  const address = String((report && report.address_text) || "").trim();
+  if (address) return address;
+  const lat = finiteCoord(report && report.latitude);
+  const lng = finiteCoord(report && report.longitude);
+  if (lat === null || lng === null) return "";
+  return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+}
+
+function pinMapHtml(report) {
+  const lat = finiteCoord(report && report.latitude);
+  const lng = finiteCoord(report && report.longitude);
+  if (lat === null || lng === null) return "";
+  return `<div id="case-pin-map" class="case-pin-map map-canvas map-canvas--leaflet mt-4" data-lat="${esc(lat.toFixed(6))}" data-lng="${esc(lng.toFixed(6))}" role="img" aria-label="Map pin for this report"></div>`;
+}
+
 export function renderCaseInfo(caseData) {
   const c = caseData;
   const rescuer = c.assigned_rescuer_id
@@ -46,7 +69,7 @@ export function renderSourceReport(caseData) {
       </div>`;
   }
   const animal = report.animal_description || "—";
-  const location = report.address_text || "—";
+  const location = locationLabel(report);
   return `
     <div class="panel case-detail-panel">
       <div class="panel-head">
@@ -62,6 +85,7 @@ export function renderSourceReport(caseData) {
           ${InfoRow("Validation", esc(report.validation_status || "—"))}
           ${InfoRow("Report status", esc(report.status || "—"))}
         </div>
+        ${pinMapHtml(report)}
       </div>
     </div>`;
 }

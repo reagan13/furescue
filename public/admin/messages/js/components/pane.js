@@ -61,6 +61,17 @@ export function syncInboxLayout() {
   showThreadChrome(findThread(state.currentKey));
 }
 
+export function renderPaneNotice(text) {
+  const scroll = document.getElementById("amsg-scroll");
+  if (!scroll) return;
+  scroll.innerHTML = `
+      <div class="amsg-empty">
+        <i data-lucide="message-circle"></i>
+        <p class="amsg-empty-text">${esc(text)}</p>
+      </div>`;
+  createIcons({ icons });
+}
+
 export function renderPane(messages, { forceScroll = true } = {}) {
   const scroll = document.getElementById("amsg-scroll");
   if (!scroll) return;

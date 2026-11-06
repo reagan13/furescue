@@ -73,10 +73,45 @@ class AnimalsApiTest extends ApiTestCase
         $animal = $this->seedEligibleAnimal(['adoption_status' => 'available']);
         $data = $this->assertOk($this->get('/api/v1/animals/' . $animal['id'], [], $this->actingAs($resident)));
         $this->assertSame($animal['id'], $data['animal']['id']);
-        $this->assertArrayNotHasKey('medical', $data['animal']);
+        $this->assertArrayHasKey('history', $data['animal']);
+        $this->assertIsArray($data['animal']['history']);
+        $this->assertArrayNotHasKey('weight_kg', $data['animal']['medical']);
+        $this->assertArrayNotHasKey('temperature_c', $data['animal']['medical']);
         $admin = $this->seedAdmin();
         $adminView = $this->assertOk($this->get('/api/v1/animals/' . $animal['id'], [], $this->actingAs($admin)));
         $this->assertArrayHasKey('medical', $adminView['animal']);
+        $this->assertSame('12.5', (string) $adminView['animal']['medical']['weight_kg']);
+        $this->assertArrayHasKey('history', $adminView['animal']);
+    }
+
+    public function testResidentSeesCheckupAndVaccinationHistory(): void
+    {
+        $resident = $this->seedResident();
+        $animal = $this->seedAnimal(['adoption_status' => 'available', 'name' => 'Tisoy']);
+        $this->pdo->prepare(
+            'INSERT INTO animal_medical_records
+                (id, animal_id, medical_history_notes, vaccination_status, vaccination_records, last_checkup_date, vet_name)
+             VALUES (?, ?, ?, ?, ?, ?, ?)'
+        )->execute([
+            $this->uuid(),
+            $animal['id'],
+            '',
+            'complete',
+            json_encode([
+                ['vaccine' => 'Rabies', 'administered_date' => '2026-08-17', 'status' => 'Completed'],
+                ['vaccine' => 'DHPP / DAPP', 'administered_date' => '2026-09-07', 'status' => 'Completed'],
+            ]),
+            '2026-09-07',
+            'Dr. Marco Reyes',
+        ]);
+
+        $data = $this->assertOk($this->get('/api/v1/animals/' . $animal['id'], [], $this->actingAs($resident)));
+        $titles = array_column($data['animal']['history'], 'title');
+        $this->assertContains('Regular Check-up', $titles);
+        $this->assertContains('Rabies Vaccination', $titles);
+        $this->assertContains('DHPP / DAPP Vaccination', $titles);
+        $this->assertSame('', $data['animal']['medical']['medical_history_notes']);
+        $this->assertArrayNotHasKey('weight_kg', $data['animal']['medical']);
     }
 
     public function testResidentCannotCreateAnimal(): void

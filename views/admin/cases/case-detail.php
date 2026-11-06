@@ -38,6 +38,38 @@ $isResolved = $statusRaw === 'resolved';
 $showResolve = $statusRaw === 'in_progress' && count($proofUrls) >= 1 && count($attachments) >= 1;
 $stampCls = ($statusRaw === 'in_progress' || $statusRaw === 'resolved') ? 'stamp--accent' : 'stamp--coral';
 
+$finiteCoord = static function (mixed $value): ?float {
+    if (is_string($value)) {
+        $value = trim($value);
+    }
+    if ($value === null || $value === '' || is_bool($value)) {
+        return null;
+    }
+    if (!is_int($value) && !is_float($value) && !(is_string($value) && is_numeric($value))) {
+        return null;
+    }
+    $number = (float) $value;
+    return is_finite($number) ? $number : null;
+};
+
+$coordLabel = static function (?float $lat, ?float $lng): string {
+    if ($lat === null || $lng === null) {
+        return '';
+    }
+    return number_format($lat, 6, '.', '') . ', ' . number_format($lng, 6, '.', '');
+};
+
+$pinMapHtmlFor = static function (?float $lat, ?float $lng): string {
+    if ($lat === null || $lng === null) {
+        return '';
+    }
+    return '<div id="case-pin-map" class="case-pin-map map-canvas map-canvas--leaflet mt-4" data-lat="'
+        . e(number_format($lat, 6, '.', ''))
+        . '" data-lng="'
+        . e(number_format($lng, 6, '.', ''))
+        . '" role="img" aria-label="Map pin for this report"></div>';
+};
+
 $locationBtn = button_html('See location', 'outline', 'sm', '', 'map-pin', 'data-cd-action="location"');
 if ($isResolved) {
     $actionsHtml = '<div class="cd-actions">' . $locationBtn
@@ -214,7 +246,11 @@ if ($report === null) {
   </div>';
 } else {
     $animalText = ($report['animal_description'] ?? '') ?: '—';
-    $locValue = ($report['address_text'] ?? '') ?: '';
+    $addressText = trim((string) ($report['address_text'] ?? ''));
+    $pinLat = $finiteCoord($report['latitude'] ?? null);
+    $pinLng = $finiteCoord($report['longitude'] ?? null);
+    $locValue = $addressText !== '' ? $addressText : $coordLabel($pinLat, $pinLng);
+    $pinMapHtml = $pinMapHtmlFor($pinLat, $pinLng);
     $sourcePanelHtml = '
   <div class="panel case-detail-panel">
     <div class="panel-head">
@@ -229,7 +265,9 @@ if ($report === null) {
         . $infoRow('Location', $locValue !== '' ? e($locValue) : '—')
         . $infoRow('Validation', e((string) (($report['validation_status'] ?? '') ?: '—')))
         . $infoRow('Report status', e((string) (($report['status'] ?? '') ?: '—')))
-      . '</div>
+      . '</div>'
+        . $pinMapHtml
+      . '
     </div>
   </div>';
 }

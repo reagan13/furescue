@@ -32,6 +32,7 @@ export function FilterToolbar() {
       ${Select({
         id: "report-sort",
         options: [
+          { value: "newest", label: "Newest" },
           { value: "assigned", label: "Assigned" },
           { value: "verified", label: "Verified" },
         ],

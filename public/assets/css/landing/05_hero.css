@@ -2,6 +2,13 @@
   position: relative;
   overflow: hidden;
   padding-block: clamp(3rem, 8vw, 4.5rem) clamp(3.5rem, 9vw, 5.5rem);
+  background-color: hsl(var(--paper));
+  background-image:
+    linear-gradient(hsl(var(--paper) / 0.78), hsl(var(--paper) / 0.88)),
+    url("/landing/hero.jpg");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
 }
 
 .hero-glow {

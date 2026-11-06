@@ -8,6 +8,7 @@ use App\Http\Response;
 use App\Repositories\AnimalRepository;
 use App\Services\AdoptionEligibilityService;
 use App\Services\AnimalAccess;
+use App\Services\HealthRecordService;
 use PDO;
 
 class AnimalController extends AbstractController
@@ -95,9 +96,20 @@ class AnimalController extends AbstractController
             Response::error('NOT_FOUND', 'Animal not found', 404);
             return;
         }
-        if ($access->canReadMedical($req->user, $req->permissions, (string) $animal->id(), $data['case_id'] ?? null)) {
+        $animalId = (string) $animal->id();
+        $data['history'] = (new HealthRecordService($this->pdo))->historyFor($animalId);
+        if ($access->canReadMedical($req->user, $req->permissions, $animalId, $data['case_id'] ?? null)) {
             $data['medical'] = $this->repo('animal_medical_records')->findBy('animal_id', $animal->id());
             $data['field_status'] = $this->repo('animal_field_status')->all(['animal_id' => $animal->id()], 'logged_at', 'DESC');
+        } else {
+            $row = $this->repo('animal_medical_records')->findBy('animal_id', $animal->id());
+            if ($row) {
+                $data['medical'] = [
+                    'vaccination_status' => $row['vaccination_status'] ?? null,
+                    'last_checkup_date' => $row['last_checkup_date'] ?? null,
+                    'medical_history_notes' => $row['medical_history_notes'] ?? null,
+                ];
+            }
         }
         Response::success(['animal' => $data]);
     }

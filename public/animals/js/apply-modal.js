@@ -1,7 +1,5 @@
 import { createIcons, icons } from "lucide";
 import { apiFetch } from "/assets/js/lib/api.js";
-import { toast } from "/shared/components/toast/toast.js";
-import { confirmDialog } from "/shared/components/dialog/dialog.js";
 import { esc } from "/assets/js/lib/format.js";
 
 // Shared "Apply to adopt" dialog. `animal` needs at least { id, name }.
@@ -54,14 +52,8 @@ export function openApplyModal(animal, { onApplied } = {}) {
   overlay.querySelector(".rmodal-x").addEventListener("click", close);
 
   overlay.querySelector('[data-act="submit"]').addEventListener("click", async (e) => {
-    const animalName = animal.name || "this animal";
-    const ok = await confirmDialog({
-      title: "Create this adoption application?",
-      message: `This will submit an adoption application for ${animalName}.`,
-      confirmText: "Create application",
-    });
-    if (!ok) return;
     const btn = e.currentTarget;
+    if (btn.disabled) return;
     const errorEl = overlay.querySelector("#apply-error");
     errorEl.hidden = true;
     btn.disabled = true;
@@ -73,8 +65,7 @@ export function openApplyModal(animal, { onApplied } = {}) {
           message: overlay.querySelector("#apply-message").value.trim() || undefined,
         },
       });
-      close();
-      toast("Application submitted! Track its status under My Adoptions.", { type: "success", duration: 5000 });
+      showSubmitted(overlay, close);
       onApplied && onApplied();
     } catch (err) {
       btn.disabled = false;
@@ -85,4 +76,24 @@ export function openApplyModal(animal, { onApplied } = {}) {
       errorEl.hidden = false;
     }
   });
+}
+
+function showSubmitted(overlay, close) {
+  const title = overlay.querySelector("#apply-title");
+  if (title) title.textContent = "Application submitted";
+  const icon = overlay.querySelector(".rmodal-head i");
+  if (icon) icon.setAttribute("data-lucide", "check-circle-2");
+  const body = overlay.querySelector(".rmodal-body");
+  const foot = overlay.querySelector(".rmodal-foot");
+  if (body) {
+    body.innerHTML = `<p class="m-0 text-sm text-muted-foreground">Your application was sent. It is pending until City Vet approves it.</p>`;
+  }
+  if (foot) {
+    foot.innerHTML = `
+      <button type="button" class="rbtn rbtn--ghost" data-act="close">Close</button>
+      <a class="rbtn rbtn--solid" href="/adoptions/">My Adoptions</a>`;
+    const closeBtn = foot.querySelector('[data-act="close"]');
+    if (closeBtn) closeBtn.addEventListener("click", close);
+  }
+  createIcons({ icons });
 }

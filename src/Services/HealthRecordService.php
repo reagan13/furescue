@@ -11,6 +11,22 @@ class HealthRecordService
     {
     }
 
+    /**
+     * Same checkup and vaccination history the admin health record shows.
+     *
+     * @return list<array{date:mixed,doctor:string,title:string,description:string,tone:string}>
+     */
+    public function historyFor(string $id): array
+    {
+        $record = $this->find($id);
+        if (!is_array($record)) {
+            return [];
+        }
+        $history = $record['history'] ?? [];
+
+        return is_array($history) ? array_values($history) : [];
+    }
+
     public function find(string $id): ?array
     {
         $animal = (new Repository($this->pdo, 'animals'))->find($id);
@@ -68,17 +84,33 @@ class HealthRecordService
         }
         if (empty($rawRecords) && !empty($vaccinationDetails)) {
             $rawRecords = array_map(function ($v) {
+                if (is_string($v)) {
+                    $text = trim($v);
+                    return [
+                        'vaccine' => $text !== '' ? $text : 'Vaccine',
+                        'administered_date' => null,
+                        'next_due' => null,
+                        'status' => null,
+                        'dose_number' => null,
+                        'manufacturer' => null,
+                        'product_name' => null,
+                        'batch_number' => null,
+                        'route' => null,
+                        'notes' => null,
+                    ];
+                }
+                $row = is_array($v) ? $v : [];
                 return [
-                    'vaccine' => $v['vaccine'] ?? 'Vaccine',
-                    'administered_date' => $v['dateGiven'] ?? ($v['date'] ?? null),
-                    'next_due' => $v['nextDue'] ?? null,
-                    'status' => $v['status'] ?? null,
-                    'dose_number' => $v['doseNumber'] ?? null,
-                    'manufacturer' => $v['manufacturer'] ?? null,
-                    'product_name' => $v['productName'] ?? null,
-                    'batch_number' => $v['batchNumber'] ?? null,
-                    'route' => $v['route'] ?? null,
-                    'notes' => $v['notes'] ?? null,
+                    'vaccine' => $row['vaccine'] ?? 'Vaccine',
+                    'administered_date' => $row['dateGiven'] ?? ($row['date'] ?? null),
+                    'next_due' => $row['nextDue'] ?? null,
+                    'status' => $row['status'] ?? null,
+                    'dose_number' => $row['doseNumber'] ?? null,
+                    'manufacturer' => $row['manufacturer'] ?? null,
+                    'product_name' => $row['productName'] ?? null,
+                    'batch_number' => $row['batchNumber'] ?? null,
+                    'route' => $row['route'] ?? null,
+                    'notes' => $row['notes'] ?? null,
                 ];
             }, $vaccinationDetails);
         }

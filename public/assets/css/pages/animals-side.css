@@ -50,6 +50,33 @@
   color: rgba(11, 37, 69, 0.55);
 }
 
+.animal-detail-photo {
+  width: 100%;
+  max-width: 100%;
+  margin-bottom: 12px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: hsl(var(--surface-soft));
+}
+.animal-detail-photo img {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+.animal-detail-photo--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 4 / 3;
+  color: hsl(var(--muted-foreground));
+}
+.animal-detail-photo--empty .lucide {
+  width: 48px;
+  height: 48px;
+}
 .animal-detail .dialog-info {
   margin-top: 12px;
 }

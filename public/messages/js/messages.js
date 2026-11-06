@@ -4,7 +4,6 @@ import { bootstrapPageAuth } from "/assets/js/lib/page-auth.js";
 import { esc, timeAgo } from "/assets/js/lib/format.js";
 import { initResidentShell } from "/assets/js/components/resident-shell.js";
 import { toast } from "/shared/components/toast/toast.js";
-import { confirmDialog } from "/shared/components/dialog/dialog.js";
 import { openCompose } from "./compose.js";
 
 const CONTEXT_LABEL = { report: "Report", case: "Case", adoption: "Adoption" };
@@ -142,6 +141,13 @@ async function loadMessages(key) {
   return (data && Array.isArray(data.messages)) ? data.messages : [];
 }
 
+function renderThreadNotice(text) {
+  const scroll = document.getElementById("msg-scroll");
+  if (!scroll) return;
+  scroll.innerHTML = `<div class="rempty"><i data-lucide="message-circle"></i><p class="rempty-text">${esc(text)}</p></div>`;
+  createIcons({ icons });
+}
+
 function renderThread(messages, { forceScroll = true } = {}) {
   const scroll = document.getElementById("msg-scroll");
   if (!scroll) return;
@@ -204,7 +210,9 @@ async function openThread(key) {
   try {
     renderThread(await loadMessages(key));
   } catch (err) {
-    toast(err.message || "Could not load this conversation.", { type: "error" });
+    const message = err.message || "Only the resident who filed this report, the assigned rescuer, or an admin can open this thread.";
+    renderThreadNotice(message);
+    toast(message, { type: "error" });
     return;
   }
   void markThreadRead(key);
@@ -303,14 +311,6 @@ function boot() {
     const input = document.getElementById("msg-input");
     const text = String(input && input.value ? input.value : "").trim();
     if (!text) return;
-    const t = findThread(state.currentKey || "");
-    const peer = (t && t.other_user_name) || "the team";
-    const ok = await confirmDialog({
-      title: "Send this message?",
-      message: `This will send a message to ${peer}.`,
-      confirmText: "Send message",
-    });
-    if (!ok) return;
     void sendMessage(text);
   });
 
