@@ -8,6 +8,7 @@ class Animal
     private ?string $name;
     private ?string $species;
     private ?string $breedType;
+    private ?string $modelPreset;
     private ?string $sex;
     private ?string $ageEstimate;
     private ?string $birthDate;
@@ -36,6 +37,7 @@ class Animal
         $animal->name = $row['name'] ?? null;
         $animal->species = $row['species'] ?? null;
         $animal->breedType = $row['breed_type'] ?? null;
+        $animal->modelPreset = $row['model_preset'] ?? null;
         $animal->sex = $row['sex'] ?? null;
         $animal->ageEstimate = $row['age_estimate'] ?? null;
         $animal->birthDate = $row['birth_date'] ?? null;
@@ -73,6 +75,11 @@ class Animal
     public function breedType(): ?string
     {
         return $this->breedType;
+    }
+
+    public function modelPreset(): ?string
+    {
+        return $this->modelPreset;
     }
 
     public function sex(): ?string
@@ -157,6 +164,7 @@ class Animal
             'name' => $this->name,
             'species' => $this->species,
             'breed_type' => $this->breedType,
+            'model_preset' => $this->modelPreset,
             'sex' => $this->sex,
             'age_estimate' => $this->ageEstimate,
             'birth_date' => $this->birthDate,

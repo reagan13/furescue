@@ -31,10 +31,10 @@ function seed_animals(SeedContext $ctx): void
 function seed_animal_models(SeedContext $ctx): void
 {
     $map = [
-        'dog' => '/uploads/demo/models/dog.glb',
-        'cat' => '/uploads/demo/models/cat.glb',
+        'dog' => 'aspin',
+        'cat' => 'puspin',
     ];
-    foreach ($map as $species => $url) {
+    foreach ($map as $species => $model) {
         $stmt = $ctx->pdo->prepare(
             "SELECT id FROM animals
              WHERE species = ? AND deleted_at IS NULL
@@ -48,15 +48,27 @@ function seed_animal_models(SeedContext $ctx): void
         }
         $ctx->pdo->prepare(
             "UPDATE animals
-             SET model_3d_url = ?,
+             SET model_3d_url = NULL,
+                 model_preset = ?,
                  adoption_status = CASE
                      WHEN adoption_status = 'not_listed' THEN 'available'
                      ELSE adoption_status
                  END
-             WHERE id = ?"
-        )->execute([$url, $id]);
+             WHERE id = ?
+               AND (model_3d_url IS NULL OR model_3d_url IN (?, ?))"
+        )->execute([
+            $model,
+            $id,
+            '/uploads/demo/models/dog.glb',
+            '/uploads/demo/models/cat.glb',
+        ]);
     }
-    echo "3D profiles: one dog and one cat model linked.\n";
+    $ctx->pdo->exec(
+        "UPDATE animals
+         SET model_3d_url = NULL
+         WHERE model_3d_url IN ('/uploads/demo/models/dog.glb', '/uploads/demo/models/cat.glb')"
+    );
+    echo "3D profiles: placeholder meshes cleared. Dogs use aspin.glb and cats use puspin.glb when no own model is uploaded.\n";
 }
 
 function seed_animals_from_cases(SeedContext $ctx): int

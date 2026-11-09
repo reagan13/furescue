@@ -33,10 +33,15 @@ function openModal({ title, icon = "rotate-3d", wide = true }) {
   return { overlay, body: overlay.querySelector("[data-modal-body]"), close };
 }
 
-export async function openModelViewer(animal) {
-  const url = String(animal.model_3d_url || "").trim();
+export async function openModelViewer(animal, options = {}) {
+  const url = String((options && options.url) || animal.model_3d_url || "").trim();
   const name = animal.name || "this animal";
-  const { overlay, body, close } = openModal({ title: `3D model · ${name}` });
+  const title = `3D model · ${name}`;
+  const { overlay, body, close } = openModal({ title });
+  if (!url) {
+    body.innerHTML = `<p class="rmodel-hint">No 3D profile uploaded yet.</p>`;
+    return;
+  }
   body.innerHTML = `
     <div class="rmodel-stage" data-stage></div>
     <p class="rmodel-hint">Drag to rotate · scroll or pinch to zoom</p>`;
@@ -69,6 +74,9 @@ export async function openModelViewer(animal) {
     stage.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
+    const backdrop = tokenColor(THREE, stage, "--background", 0xf4f4f4);
+    const floorColor = tokenColor(THREE, stage, "--surface-soft", 0xe6e6e6);
+    scene.background = backdrop;
     scene.add(new THREE.AmbientLight(0xffffff, 0.9));
     const key = new THREE.DirectionalLight(0xffffff, 1.4);
     key.position.set(3, 5, 4);
@@ -85,6 +93,14 @@ export async function openModelViewer(animal) {
     const wrapper = new THREE.Group();
     wrapper.add(object);
     scene.add(wrapper);
+
+    const ground = new THREE.Mesh(
+      new THREE.CircleGeometry(Math.max(size.x, size.z, maxDim * 0.6) * 0.85, 48),
+      new THREE.MeshStandardMaterial({ color: floorColor, roughness: 1, metalness: 0 })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -size.y / 2;
+    scene.add(ground);
 
     const camera = new THREE.PerspectiveCamera(45, width / height, maxDim / 1000, maxDim * 20);
     camera.position.set(0, maxDim * 0.35, maxDim * 1.7);
@@ -116,6 +132,8 @@ export async function openModelViewer(animal) {
       running = false;
       ro.disconnect();
       controls.dispose();
+      ground.geometry.dispose();
+      ground.material.dispose();
       renderer.setAnimationLoop(null);
       renderer.dispose();
     };
@@ -131,6 +149,15 @@ export async function openModelViewer(animal) {
     }
   });
   mo.observe(document.body, { childList: true });
+}
+
+function tokenColor(THREE, el, token, fallbackHex) {
+  const color = new THREE.Color(fallbackHex);
+  const raw = getComputedStyle(el).getPropertyValue(token).trim();
+  const parts = raw.match(/([\d.]+)\s+([\d.]+)%\s+([\d.]+)%/);
+  if (!parts) return color;
+  color.setHSL(Number(parts[1]) / 360, Number(parts[2]) / 100, Number(parts[3]) / 100);
+  return color;
 }
 
 function showFallback(body, name, url) {

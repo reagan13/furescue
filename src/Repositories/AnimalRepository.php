@@ -9,7 +9,7 @@ use PDO;
 class AnimalRepository
 {
     private const COLUMNS = [
-        'id', 'name', 'species', 'breed_type', 'sex', 'age_estimate', 'birth_date',
+        'id', 'name', 'species', 'breed_type', 'model_preset', 'sex', 'age_estimate', 'birth_date',
         'color_markings', 'barangay', 'description', 'photo_urls', 'model_3d_url',
         'photo_360_set', 'adoption_status', 'source', 'case_id', 'created_by', 'deleted_at',
         'created_at', 'updated_at',

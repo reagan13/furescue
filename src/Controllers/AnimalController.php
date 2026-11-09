@@ -9,6 +9,7 @@ use App\Repositories\AnimalRepository;
 use App\Services\AdoptionEligibilityService;
 use App\Services\AnimalAccess;
 use App\Services\HealthRecordService;
+use App\Services\ReferenceModel;
 use PDO;
 
 class AnimalController extends AbstractController
@@ -75,11 +76,14 @@ class AnimalController extends AbstractController
         $total = (int) $countStmt->fetchColumn();
         $offset = ($page - 1) * $perPage;
         $stmt = $this->pdo->prepare(
-            "SELECT id,name,species,breed_type,sex,age_estimate,birth_date,color_markings,photo_urls,model_3d_url,photo_360_set,adoption_status,source,case_id,created_at
+            "SELECT id,name,species,breed_type,model_preset,sex,age_estimate,birth_date,color_markings,photo_urls,model_3d_url,photo_360_set,adoption_status,source,case_id,created_at
              FROM animals {$where} ORDER BY created_at DESC LIMIT " . (int) $perPage . " OFFSET " . (int) $offset
         );
         $stmt->execute($params);
-        $items = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $items = array_map(
+            static fn (array $row): array => ReferenceModel::decorate($row),
+            $stmt->fetchAll(\PDO::FETCH_ASSOC)
+        );
         Response::paginated($items, $this->meta($page, $perPage, $total));
     }
 
@@ -91,7 +95,7 @@ class AnimalController extends AbstractController
             return;
         }
         $access = new AnimalAccess($this->pdo);
-        $data = $animal->toArray();
+        $data = ReferenceModel::decorate($animal->toArray());
         if (!$access->canSee($req->user, $req->permissions, $data)) {
             Response::error('NOT_FOUND', 'Animal not found', 404);
             return;
@@ -119,6 +123,7 @@ class AnimalController extends AbstractController
         $v = new \App\Validation\Validator($req->body);
         $v->required('species')->in('species', ['dog', 'cat'])
             ->required('breed_type')->in('breed_type', ['aspin', 'puspin'])
+            ->optional('model_preset')->in('model_preset', ReferenceModel::PRESETS)
             ->required('sex')->in('sex', ['male', 'female'])
             ->optional('name')->string('name', 100)
             ->optional('adoption_status')->in('adoption_status', ['not_listed', 'available', 'pending', 'adopted'])
@@ -146,6 +151,7 @@ class AnimalController extends AbstractController
             'id' => $id,
             'species' => $req->body['species'],
             'breed_type' => $req->body['breed_type'],
+            'model_preset' => ReferenceModel::stored($req->body['model_preset'] ?? null),
             'sex' => $req->body['sex'],
             'name' => $req->body['name'] ?? null,
             'age_estimate' => $req->body['age_estimate'] ?? null,
@@ -169,7 +175,7 @@ class AnimalController extends AbstractController
             $this->attachCaseId($id, $fromCase);
         }
         $created = $this->animals->find($id);
-        Response::success(['animal' => $created->toArray()], 201);
+        Response::success(['animal' => ReferenceModel::decorate($created->toArray())], 201);
     }
 
     public function update(Request $req): void
@@ -179,7 +185,7 @@ class AnimalController extends AbstractController
             Response::error('NOT_FOUND', 'Animal not found', 404);
             return;
         }
-        $allowed = ['name', 'age_estimate', 'birth_date', 'color_markings', 'description', 'photo_urls', 'model_3d_url', 'photo_360_set', 'adoption_status', 'case_id', 'species', 'sex'];
+        $allowed = ['name', 'age_estimate', 'birth_date', 'color_markings', 'description', 'photo_urls', 'model_3d_url', 'photo_360_set', 'adoption_status', 'case_id', 'species', 'sex', 'model_preset'];
         $data = [];
         foreach ($allowed as $f) {
             if (array_key_exists($f, $req->body)) {
@@ -215,12 +221,18 @@ class AnimalController extends AbstractController
         if (array_key_exists('sex', $req->body)) {
             $v->optional('sex')->in('sex', ['male', 'female']);
         }
+        if (array_key_exists('model_preset', $req->body)) {
+            $v->optional('model_preset')->in('model_preset', ReferenceModel::PRESETS);
+        }
         if (array_key_exists('case_id', $req->body) && $req->body['case_id'] !== null && $req->body['case_id'] !== '') {
             $v->optional('case_id')->uuid('case_id');
         }
         if (!$v->passes()) {
             Response::error('VALIDATION_ERROR', $v->firstError(), 400);
             return;
+        }
+        if (array_key_exists('model_preset', $data)) {
+            $data['model_preset'] = ReferenceModel::stored($data['model_preset']);
         }
         $caseId = array_key_exists('case_id', $data) ? $data['case_id'] : null;
         unset($data['case_id']);
@@ -239,7 +251,7 @@ class AnimalController extends AbstractController
             $this->attachCaseId($animal->id(), (string) $caseId);
         }
         $updated = $this->animals->find($animal->id());
-        Response::success(['animal' => $updated->toArray()]);
+        Response::success(['animal' => ReferenceModel::decorate($updated->toArray())]);
     }
 
     public function delete(Request $req): void
@@ -250,7 +262,7 @@ class AnimalController extends AbstractController
             return;
         }
         $this->animals->softDelete($animal->id());
-        Response::success(['animal' => $animal->toArray()]);
+        Response::success(['animal' => ReferenceModel::decorate($animal->toArray())]);
     }
 
     public function logFieldStatus(Request $req): void

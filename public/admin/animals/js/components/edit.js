@@ -137,6 +137,8 @@ export async function openEditAnimalDialog(animal) {
               modelUrl: animal.model3d || "",
               photo360: animal.photo360 || "",
               showRemove: true,
+              species: animal.species,
+              preset: animal.modelPreset || "",
             })}
 
             <p class="dialog-error" id="ea-error" hidden></p>
@@ -231,6 +233,7 @@ export async function openEditAnimalDialog(animal) {
         age_estimate: age,
         color_markings: colorEl ? colorEl.value.trim() : null,
         adoption_status: form.status,
+        model_preset: assets.modelPreset || null,
       };
       if (!assets.modelFile && !assets.removeModel) {
         const pasted = assets.modelUrl;

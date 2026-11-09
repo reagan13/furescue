@@ -5,7 +5,7 @@ import { Spinner } from "/shared/components/spinner/spinner.js";
 import { createAnimal, fetchCase, fetchReport, updateAnimal } from "/assets/js/admin/admin-data.js";
 import { confirmDialog } from "/shared/components/dialog/dialog.js";
 import { addAnimal, parsePhoto360, setSelectedId } from "../state.js";
-import { bindProfileAssets, clientAssetError, profileAssetsFields, readProfileAssets } from "./profile-assets.js";
+import { bindProfileAssets, clientAssetError, profileAssetsFields, readProfileAssets, syncReferencePreset } from "./profile-assets.js";
 import { esc, resizeImage, ageFromBirthDate, shortId } from "./util.js";
 
 const HEALTH_READY_HINT =
@@ -137,7 +137,7 @@ export function openAddAnimalDialog(prefill = {}) {
               <input type="file" id="aa-photo" accept="image/*" class="aa-photo-input" />
             </div>
 
-            ${profileAssetsFields({ prefix: "aa" })}
+            ${profileAssetsFields({ prefix: "aa", species: form.species })}
 
             <p class="dialog-error" id="aa-error" hidden>Please provide a name.</p>
           </div>
@@ -177,6 +177,7 @@ export function openAddAnimalDialog(prefill = {}) {
       form.breed = form.species === "cat" ? "puspin" : "aspin";
       activate(speciesTabsEl, "species", form.species);
       activate(breedTabsEl, "breed", form.breed);
+      syncReferencePreset(overlay.querySelector("#aa-model-preset"), form.species);
     });
     breedTabsEl.addEventListener("click", (e) => {
       const btn = e.target.closest("[data-breed]");
@@ -315,6 +316,7 @@ export function openAddAnimalDialog(prefill = {}) {
             description,
             photo_urls: form.photo ? [form.photo] : null,
             case_id: caseId,
+            model_preset: assets.modelPreset || null,
           });
           if (created && created.id) form.pendingId = created.id;
         }
@@ -333,6 +335,7 @@ export function openAddAnimalDialog(prefill = {}) {
           photo360Urls,
           modelFile: assets.modelFile,
           photo360Files: assets.photo360Files,
+          modelPreset: assets.modelPreset,
           description,
         });
         if (caseId && animal && animal.id) {

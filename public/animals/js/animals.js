@@ -39,6 +39,9 @@ function cardHtml(animal) {
     .filter(Boolean)
     .join(" · ");
   const spin = parseUrls(animal.photo_360_set);
+  const ownModel = String(animal.model_3d_url || "").trim();
+  const referenceModel = String(animal.reference_model_url || "").trim();
+  const viewTitle = ownModel ? "View this animal" : "View in 3D";
 
   return `
   <article class="racard" data-id="${esc(animal.id)}" tabindex="0" aria-label="View ${esc(name)}">
@@ -61,8 +64,8 @@ function cardHtml(animal) {
       <div class="racard-tags">
         <span class="rchip">${esc(label(animal.species) || "Pet")}</span>
         ${
-          animal.model_3d_url
-            ? `<button type="button" class="rchip rchip--sky" data-view-3d title="View 3D model"><i data-lucide="rotate-3d"></i>3D</button>`
+          ownModel || referenceModel
+            ? `<button type="button" class="rchip rchip--sky" data-view-3d title="${esc(viewTitle)}"><i data-lucide="rotate-3d"></i>3D</button>`
             : ""
         }
         ${
@@ -169,8 +172,9 @@ function initEvents() {
     const card = event.target.closest(".racard");
     if (!card) return;
     const animal = registry.get(card.dataset.id);
-    if (event.target.closest("[data-view-3d]") && animal && animal.model_3d_url) {
-      openModelViewer(animal);
+    if (event.target.closest("[data-view-3d]") && animal) {
+      if (String(animal.model_3d_url || "").trim()) openModelViewer(animal);
+      else if (String(animal.reference_model_url || "").trim()) openModelViewer(animal, { url: animal.reference_model_url });
       return;
     }
     if (event.target.closest("[data-view-360]") && animal) {

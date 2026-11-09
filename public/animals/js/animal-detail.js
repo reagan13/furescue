@@ -86,6 +86,34 @@ function galleryHtml(photos) {
     </div>`;
 }
 
+function modelButtonsHtml(spinCount) {
+  const ownUrl = String(animal.model_3d_url || "").trim();
+  const staticUrl = String(animal.reference_model_url || "").trim();
+  const buttons = [];
+  if (ownUrl) {
+    buttons.push(
+      `<button type="button" id="btn-view-animal" class="rbtn rbtn--ghost"><i data-lucide="rotate-3d"></i><span>View this animal</span></button>`
+    );
+  } else if (staticUrl) {
+    buttons.push(
+      `<button type="button" id="btn-view-3d" class="rbtn rbtn--ghost"><i data-lucide="rotate-3d"></i><span>View in 3D</span></button>`
+    );
+  } else if (spinCount) {
+    buttons.push(
+      `<button type="button" id="btn-view-animal" class="rbtn rbtn--ghost"><i data-lucide="refresh-cw"></i><span>View this animal</span></button>`
+    );
+  }
+  if ((ownUrl || staticUrl) && spinCount) {
+    buttons.push(
+      `<button type="button" id="btn-view-360" class="rbtn rbtn--ghost"><i data-lucide="refresh-cw"></i><span>360° view</span></button>`
+    );
+  }
+  if (!buttons.length) {
+    return `<p class="rpage-sub mt-4">No 3D profile uploaded yet.</p>`;
+  }
+  return `<div class="mt-4 flex flex-wrap gap-2">${buttons.join("")}</div>`;
+}
+
 function infoHtml({ spinCount }) {
   const status = STATUS_CHIPS[animal.adoption_status] || STATUS_CHIPS.not_listed;
   const vaccine = VACCINE_LABELS[(animal.medical && animal.medical.vaccination_status) || "none"] || VACCINE_LABELS.none;
@@ -116,14 +144,7 @@ function infoHtml({ spinCount }) {
       }
     </dl>
 
-    ${
-      animal.model_3d_url || spinCount
-        ? `<div class="mt-4 flex flex-wrap gap-2">
-            ${animal.model_3d_url ? `<button type="button" id="btn-view-3d" class="rbtn rbtn--ghost"><i data-lucide="rotate-3d"></i><span>View in 3D</span></button>` : ""}
-            ${spinCount ? `<button type="button" id="btn-view-360" class="rbtn rbtn--ghost"><i data-lucide="refresh-cw"></i><span>360° view</span></button>` : ""}
-          </div>`
-        : ""
-    }
+    ${modelButtonsHtml(spinCount)}
 
     ${
       animal.adoption_status === "available"
@@ -222,12 +243,17 @@ function onDetailClick(event) {
     return;
   }
 
-  if (event.target.closest("#btn-view-3d")) {
-    openModelViewer(animal);
+  if (event.target.closest("#btn-view-animal")) {
+    if (String(animal.model_3d_url || "").trim()) openModelViewer(animal);
+    else open360Viewer(animal);
     return;
   }
   if (event.target.closest("#btn-view-360")) {
     open360Viewer(animal);
+    return;
+  }
+  if (event.target.closest("#btn-view-3d")) {
+    openModelViewer(animal, { url: animal.reference_model_url });
     return;
   }
   if (event.target.closest("#btn-apply")) {

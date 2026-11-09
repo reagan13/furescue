@@ -60,11 +60,34 @@ function namesLine(files) {
   return `${list.length} files selected: ${shown.join(", ")}${extra}`;
 }
 
-export function profileAssetsFields({ prefix, modelUrl = "", photo360 = "", showRemove = false }) {
+export const REFERENCE_PRESETS = [
+  { value: "aspin", label: "Aspin" },
+  { value: "puspin", label: "Puspin" },
+  { value: "hungarian", label: "Hungarian" },
+  { value: "german_shepherd", label: "German Shepherd" },
+];
+
+export function defaultReferencePreset(species) {
+  return String(species || "").toLowerCase() === "cat" ? "puspin" : "aspin";
+}
+
+export function syncReferencePreset(select, species) {
+  if (!select) return;
+  if (select.value === "aspin" || select.value === "puspin" || select.value === "") {
+    select.value = defaultReferencePreset(species);
+  }
+}
+
+export function profileAssetsFields({ prefix, modelUrl = "", photo360 = "", showRemove = false, species = "dog", preset = "" }) {
   const modelCurrent = fileBase(modelUrl);
   const frames = frameCount(photo360);
   const photoText = typeof photo360 === "string" ? photo360 : photo360 ? JSON.stringify(photo360) : "";
+  const chosen = REFERENCE_PRESETS.some((opt) => opt.value === preset) ? preset : defaultReferencePreset(species);
+  const presetOptions = REFERENCE_PRESETS.map(
+    (opt) => `<option value="${esc(opt.value)}"${opt.value === chosen ? " selected" : ""}>${esc(opt.label)}</option>`
+  ).join("");
   return `
+    <div class="dialog-row">
     <div class="file-attach">
       <label class="dialog-label" for="${prefix}-model3d-file">
         <span class="file-attach__title"><i data-lucide="rotate-3d"></i>3D model</span>
@@ -85,6 +108,13 @@ export function profileAssetsFields({ prefix, modelUrl = "", photo360 = "", show
         <summary class="dialog-hint">or paste URL</summary>
         <input class="dialog-input" id="${prefix}-model3d" value="${esc(modelUrl)}" placeholder="https://…" autocomplete="off" />
       </details>
+    </div>
+    <div class="file-attach">
+      <label class="dialog-label" for="${prefix}-model-preset">
+        Static model
+        <select class="dialog-input" id="${prefix}-model-preset">${presetOptions}</select>
+      </label>
+    </div>
     </div>
     <div class="file-attach">
       <label class="dialog-label" for="${prefix}-photo360-file">
@@ -154,11 +184,13 @@ export function readProfileAssets(overlay, prefix) {
   const photoPaste = overlay.querySelector(`#${prefix}-photo360`);
   const modelRemove = overlay.querySelector(`#${prefix}-model3d-remove`);
   const photoRemove = overlay.querySelector(`#${prefix}-photo360-remove`);
+  const presetEl = overlay.querySelector(`#${prefix}-model-preset`);
   return {
     modelFile: modelInput && modelInput.files && modelInput.files[0] ? modelInput.files[0] : null,
     photo360Files: photoInput && photoInput.files ? Array.from(photoInput.files) : [],
     modelUrl: modelPaste ? modelPaste.value.trim() : "",
     photo360Text: photoPaste ? photoPaste.value : "",
+    modelPreset: presetEl ? presetEl.value : "",
     removeModel: !!(modelRemove && modelRemove.checked),
     remove360: !!(photoRemove && photoRemove.checked),
   };

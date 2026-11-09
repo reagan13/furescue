@@ -76,11 +76,11 @@ On an assigned case, web and phone: show the animal profile, medical notes, vacc
 
 ### 4. A 3D profile a respondent can open
 
-Website `present` after the animal seed links the two models. Phone `unfinished` until a phone is attached. U-FS-6, objective 9.
+Website `present`. Phone `unfinished` until a phone is attached. U-FS-6, A-FS-11, objective 9.
 
-The viewers are real: Three.js on the animal page (`public/animals/js/3d-viewer.js`) and `model_viewer_plus` on the phone when `model_3d_url` ends in `.glb` or `.gltf`. Admin upload of `.glb` / `.gltf` / `.obj` and a 360 set is wired. Seed data never sets those fields, so the resident buttons never appear and the phone says “No 3D profile uploaded yet.”
+The animal page can open a 3D profile. An animal’s own mesh opens as “View this animal”, and a 360 set opens the same way when there is no mesh and no static file. Aspin (`public/assets/models/aspin.glb`) and Puspin (`puspin.glb`) are the static files. Hungarian and German Shepherd stay on the admin animal form, and “View in 3D” stays hidden while `hungarian.glb` or `german-shepherd.glb` is missing. If the animal has no own model and the static file is on disk, “View in 3D” opens that file. If it is not on disk, the screen still says “No 3D profile uploaded yet.” The phone uses those same labels and the existing model viewer. No physical phone is attached, so the phone row stays unfinished. That is not a survey score.
 
-Upload or seed at least one dog and one cat model, then confirm View in 3D on the website and on a phone.
+`breed_type` is still only aspin or puspin. The static choice is `model_preset`. Admin save is A-FS-11. Objective 9 is unchanged: a 3D profile of the animal.
 
 ### 5. Play the video that was uploaded
 
@@ -164,7 +164,7 @@ User form, resident web and resident phone.
 | U-FS-3 | present | present |
 | U-FS-4 | present for links a resident can open; the inbox is a poll, not push (item 6) | unfinished — no phone attached |
 | U-FS-5 | present — resident can message the assigned rescuer and an admin (item 2) | unfinished — no phone attached |
-| U-FS-6 | present after `php seeders\seed_animals.php` links `/uploads/demo/models/dog.glb` and `cat.glb` (item 4) | unfinished — no phone attached |
+| U-FS-6 | present — the animal page opens the static model when the animal has no own mesh (item 4) | unfinished — no phone attached |
 | U-FS-7 | present | present |
 | U-PE-1, U-PE-2, U-PE-3 | rater-only; U-PE-3 depends on item 6 | rater-only |
 | U-CO-1, U-CO-2, U-PO-1 | rater-only (website) | phone app is the mobile client for U-PO-2 |
@@ -202,7 +202,8 @@ Administrator form. Website only.
 | ID | Web |
 |----|-----|
 | A-FS-1 | present; restore copy is item 9 |
-| A-FS-2, A-FS-3, A-FS-4, A-FS-5, A-FS-9, A-FS-11 | present |
+| A-FS-2, A-FS-3, A-FS-4, A-FS-5, A-FS-9 | present |
+| A-FS-11 | present — the animal form saves the static model beside the animal’s own mesh and 360 set (item 4) |
 | A-FS-6 | present; the heatmap asks for verified pins (item 9) |
 | A-FS-7 | present — rescue rate, hours to resolve, and a place summary (item 7) |
 | A-FS-8 | present; Remove calls the existing delete route (item 9) |

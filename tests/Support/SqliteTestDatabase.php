@@ -118,6 +118,7 @@ final class SqliteTestDatabase
                 name TEXT,
                 species TEXT NOT NULL,
                 breed_type TEXT NOT NULL,
+                model_preset TEXT,
                 sex TEXT NOT NULL,
                 age_estimate TEXT,
                 birth_date TEXT,

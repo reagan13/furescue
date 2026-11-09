@@ -65,6 +65,7 @@ export function normalize(raw) {
     intake: (raw.created_at || "").slice(0, 10),
     photo: firstPhoto(raw.photo_urls),
     model3d: raw.model_3d_url || "",
+    modelPreset: raw.model_preset || "",
     photo360: typeof raw.photo_360_set === "string" ? raw.photo_360_set : raw.photo_360_set ? JSON.stringify(raw.photo_360_set) : "",
   };
 }
@@ -175,9 +176,14 @@ export async function saveAnimalAssets(id, assets) {
 
 export async function addAnimal(data) {
   let raw;
+  const preset = data.modelPreset || null;
   if (data.id) {
     const p = await apiFetchFull(`/animals/${encodeURIComponent(data.id)}`);
     raw = p && p.data && p.data.animal ? p.data.animal : { id: data.id };
+    if (preset) {
+      const patched = await api.updateAnimal(data.id, { model_preset: preset });
+      if (patched) raw = patched;
+    }
   } else {
     raw = await api.createAnimal({
       name: data.name || null,
@@ -192,6 +198,7 @@ export async function addAnimal(data) {
       photo_urls: data.photo ? [data.photo] : null,
       model_3d_url: data.modelFile ? null : data.model3d ? data.model3d : null,
       photo_360_set: data.photo360Files && data.photo360Files.length ? null : data.photo360Urls || null,
+      model_preset: preset,
     });
   }
   const id = data.id || (raw && raw.id);
